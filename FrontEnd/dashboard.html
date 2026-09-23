@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGS Barber - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- Menu de Navegação Lateral -->
+    <aside class="sidebar" id="adminSidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-scissors"></i>
+            <span>SGS BARBER</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="#" class="menu-item active" data-target="view-agenda"><i class="fa-solid fa-calendar-days"></i> Agenda</a></li>
+            <li><a href="#" class="menu-item" data-target="view-servicos"><i class="fa-solid fa-list-check"></i> Serviços</a></li>
+            <li><a href="#" class="menu-item" data-target="view-barbeiros"><i class="fa-solid fa-user-tie"></i> Barbeiros</a></li>
+            <li><a href="#" class="menu-item" data-target="view-clientes"><i class="fa-solid fa-users"></i> Clientes</a></li>
+            <li><a href="#" class="menu-item" data-target="view-ai"><i class="fa-solid fa-robot"></i> Agente IA <span class="badge-ai">Sprint 03</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="login.html"><i class="fa-solid fa-right-from-bracket"></i> Sair</a>
+        </div>
+    </aside>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+        <header class="topbar">
+            <h2 id="pageTitle">Visão Geral da Agenda</h2>
+            <div class="user-profile-badge">
+                <img id="userAvatar" src="https://ui-avatars.com/api/?name=Admin+SGS&background=1e293b&color=fff" alt="Avatar">
+                <span id="userNameDisplay">Admin / Barbeiro</span>
+            </div>
+        </header>
+
+        <!-- ================= VIEWS DE ADMIN ================= -->
+        <div id="adminViewsContainer">
+            <!-- 1. Agenda Kanban -->
+            <div class="admin-view active" id="view-agenda">
+                <div class="kanban-section">
+                    <div class="section-header">
+                        <h3>Agenda Diária - Grade por Horários</h3>
+                        <div class="date-selector-box">
+                            <button class="btn-icon"><i class="fa-solid fa-chevron-left"></i></button>
+                            <span id="currentKanbanDate">Hoje, 23 Set 2026</span>
+                            <button class="btn-icon"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="kanban-grid" id="kanbanGridContainer">
+                        <!-- Renderizado via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Gestão de Serviços -->
+            <div class="admin-view" id="view-servicos">
+                <div class="crud-container">
+                    <div class="section-header">
+                        <h3>Gerenciamento de Serviços</h3>
+                        <button class="btn-primary" style="width: auto; padding: 8px 16px;" onclick="openModal('modalServico')"><i class="fa-solid fa-plus"></i> Novo Serviço</button>
+                    </div>
+                    <table class="crud-table">
+                        <thead><tr><th>Nome do Serviço</th><th>Preço</th><th>Duração</th><th>Ações</th></tr></thead>
+                        <tbody id="tableServicosBody">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3. Gestão de Barbeiros -->
+            <div class="admin-view" id="view-barbeiros">
+                <div class="crud-container">
+                    <div class="section-header">
+                        <h3>Gerenciamento de Barbeiros</h3>
+                        <button class="btn-primary" style="width: auto; padding: 8px 16px;" onclick="openModal('modalBarbeiro')"><i class="fa-solid fa-plus"></i> Novo Barbeiro</button>
+                    </div>
+                    <table class="crud-table">
+                        <thead><tr><th>Nome</th><th>Especialidade</th><th>Telefone</th><th>Escala</th><th>Ações</th></tr></thead>
+                        <tbody id="tableBarbeirosBody">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 4. Gestão de Clientes -->
+            <div class="admin-view" id="view-clientes">
+                <div class="crud-container">
+                    <div class="section-header">
+                        <h3>Base de Clientes</h3>
+                        <input type="text" id="searchClientInput" placeholder="Buscar cliente por nome..." class="search-input-box" oninput="filterClients()">
+                    </div>
+                    <table class="crud-table">
+                        <thead><tr><th>Nome</th><th>WhatsApp</th><th>Email</th><th>Ações</th></tr></thead>
+                        <tbody id="tableClientesBody">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 5. Agente IA -->
+            <div class="admin-view" id="view-ai">
+                <div class="ai-chat-container">
+                    <div class="ai-chat-box" id="aiChatBox">
+                        <div class="ai-message bot">Olá! Sou o Agente IA do SGS Barber. Como posso ajudar na gestão ou sugerir encaixes hoje?</div>
+                    </div>
+                    <div class="ai-input-area">
+                        <input type="text" id="aiUserInput" placeholder="Digite sua mensagem para a IA..." onkeypress="if(event.key === 'Enter') handleAiSend()">
+                        <button class="btn-primary" style="width: auto;" onclick="handleAiSend()"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW DE CLIENTE (Agendamento) ================= -->
+        <div id="clientBookingContainer" style="display: none;">
+            <div class="booking-wizard">
+                <div class="wizard-steps-indicator">
+                    <span class="step-badge active" data-step="1">1. Serviço</span>
+                    <span class="step-badge" data-step="2">2. Barbeiro</span>
+                    <span class="step-badge" data-step="3">3. Data & Horário</span>
+                    <span class="step-badge" data-step="4">4. Confirmação</span>
+                </div>
+
+                <div class="wizard-step-content active" id="step-1">
+                    <h3>Escolha o Serviço</h3>
+                    <div class="cards-selector-grid" id="clientServiceGrid">
+                        <!-- Dinâmico -->
+                    </div>
+                </div>
+
+                <div class="wizard-step-content" id="step-2">
+                    <h3>Escolha o Barbeiro de Preferência</h3>
+                    <div class="cards-selector-grid" id="clientBarberGrid">
+                        <!-- Dinâmico -->
+                    </div>
+                </div>
+
+                <div class="wizard-step-content" id="step-3">
+                    <h3>Selecione a Data e Horários Disponíveis</h3>
+                    <div class="date-time-picker-wrapper">
+                        <input type="date" class="date-input-field" id="bookingDate" value="2026-09-24" onchange="updateBookingDate(this.value)">
+                        <div class="time-chips-container">
+                            <p>Horários livres:</p>
+                            <div class="chips-grid" id="clientTimeChips">
+                                <button class="time-chip" onclick="selectTime('08:00')">08:00</button>
+                                <button class="time-chip" onclick="selectTime('08:30')">08:30</button>
+                                <button class="time-chip" onclick="selectTime('09:30')">09:30</button>
+                                <button class="time-chip" onclick="selectTime('10:00')">10:00</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wizard-step-content" id="step-4">
+                    <h3>Resumo do Agendamento</h3>
+                    <div class="summary-box">
+                        <p><strong>Serviço:</strong> <span id="summaryService">-</span></p>
+                        <p><strong>Barbeiro:</strong> <span id="summaryBarber">-</span></p>
+                        <p><strong>Data e Horário:</strong> <span id="summaryDateTime">-</span></p>
+                        <p><strong>Valor Total:</strong> <span id="summaryPrice">-</span></p>
+                    </div>
+                    <button class="btn-primary" onclick="confirmClientBooking()">Confirmar Agendamento</button>
+                </div>
+
+                <div class="wizard-nav-buttons">
+                    <button class="btn-secondary" id="prevBtn" onclick="changeStep(-1)" style="display:none;">Voltar</button>
+                    <button class="btn-primary" id="nextBtn" onclick="changeStep(1)">Avançar</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ================= MODAIS DE CADASTRO E CONFIRMAÇÃO ================= -->
+    <!-- Modal Novo Serviço -->
+    <div id="modalServico" class="modal-overlay">
+        <div class="modal-card">
+            <h3>Cadastrar Novo Serviço</h3>
+            <form onsubmit="saveServico(event)">
+                <div class="input-group"><label>Nome do Serviço</label><input type="text" id="srvName" required></div>
+                <div class="input-group"><label>Preço (R$)</label><input type="text" id="srvPrice" placeholder="40.00" required></div>
+                <div class="input-group"><label>Duração</label><input type="text" id="srvDuration" placeholder="30 min" required></div>
+                <div class="modal-actions"><button type="button" class="btn-secondary" onclick="closeModal('modalServico')">Cancelar</button><button type="submit" class="btn-primary" style="width: auto;">Salvar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Novo Barbeiro -->
+    <div id="modalBarbeiro" class="modal-overlay">
+        <div class="modal-card">
+            <h3>Cadastrar Novo Barbeiro</h3>
+            <form onsubmit="saveBarbeiro(event)">
+                <div class="input-group"><label>Nome</label><input type="text" id="barName" required></div>
+                <div class="input-group"><label>Especialidade</label><input type="text" id="barSpec" required></div>
+                <div class="input-group"><label>Telefone</label><input type="text" id="barPhone" required></div>
+                <div class="input-group"><label>Escala</label><input type="text" id="barScale" placeholder="08:00 - 17:00" required></div>
+                <div class="modal-actions"><button type="button" class="btn-secondary" onclick="closeModal('modalBarbeiro')">Cancelar</button><button type="submit" class="btn-primary" style="width: auto;">Salvar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Confirmação Genérico -->
+    <div id="modalConfirm" class="modal-overlay">
+        <div class="modal-card" style="text-align: center;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 36px; color: var(--danger); margin-bottom: 12px;"></i>
+            <h3 id="confirmModalTitle">Confirmação</h3>
+            <p id="confirmModalText" style="margin: 12px 0 20px 0; color: var(--text-muted);">Deseja realmente prosseguir com esta ação?</p>
+            <div class="modal-actions" style="justify-content: center;">
+                <button type="button" class="btn-secondary" onclick="closeModal('modalConfirm')">Não</button>
+                <button type="button" class="btn-primary" id="confirmModalBtnYes" style="width: auto; background: var(--danger);">Sim, Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

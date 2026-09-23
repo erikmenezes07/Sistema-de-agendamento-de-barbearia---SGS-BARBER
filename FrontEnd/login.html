@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGS Barber - Acesso</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="login-body">
+
+    <div class="login-card">
+        <!-- Logo centralizada -->
+        <div class="login-logo">
+            <i class="fa-solid fa-scissors"></i>
+            <h1>SGS BARBER</h1>
+            <p>Sistema de Gestão e Agendamento</p>
+        </div>
+
+        <!-- Seletor de Perfl -->
+        <div class="profile-tabs" id="profileTypeTabs">
+            <button class="tab-btn active" type="button" data-profile="cliente">Cliente</button>
+            <button class="tab-btn" type="button" data-profile="admin">Barbeiro / Admin</button>
+        </div>
+
+        <!--  Entrar  Criar Conta -->
+        <div class="auth-mode-switch">
+            <span id="modeLogin" class="active-mode" onclick="switchAuthMode('login')">Entrar</span> | 
+            <span id="modeRegister" onclick="switchAuthMode('register')">Criar Conta</span>
+        </div>
+
+        <!-- Formulário-->
+        <form class="login-form" id="authForm">
+            <div class="input-group" id="groupName" style="display: none;">
+                <label for="reg-name">Nome Completo</label>
+                <div class="input-field">
+                    <i class="fa-solid fa-user-tag"></i>
+                    <input type="text" id="reg-name" placeholder="Seu nome completo">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="user-identifier">Email / CPF / Telefone</label>
+                <div class="input-field">
+                    <i class="fa-regular fa-user"></i>
+                    <input type="text" id="user-identifier" placeholder="Digite seu identificador" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="password">Senha</label>
+                <div class="input-field">
+                    <i class="fa-lock fa-solid"></i>
+                    <input type="password" id="password" placeholder="********" required>
+                </div>
+            </div>
+
+            <div class="form-actions-link" id="forgotPassLink">
+                <a href="#" class="forgot-pass">Esqueceu sua senha?</a>
+            </div>
+
+            <button type="submit" class="btn-primary" id="btnSubmitAction">Entrar</button>
+        </form>
+    </div>
+
+    <!-- Notificações Toast -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
