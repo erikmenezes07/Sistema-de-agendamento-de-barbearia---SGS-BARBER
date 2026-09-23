@@ -1,0 +1,15 @@
+$kind: http-request
+url: http://localhost:8080/api/barbeiros/2
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \  \"nome\": \"Igor Barbeiro Mestre\",\r
+
+    \  \"telefone\": \"81999991111\",\r
+
+    \  \"ativo\": true\r
+
+    }"
+order: 4459580375574105

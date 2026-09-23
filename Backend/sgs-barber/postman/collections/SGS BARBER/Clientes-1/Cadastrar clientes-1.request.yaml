@@ -1,0 +1,16 @@
+$kind: http-request
+name: Cadastrar clientes
+url: http://localhost:8080/api/clientes
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nome\": \"julio\",\r
+
+    \  \"email\": \"julio@email.com\",\r
+
+    \  \"telefone\": \"81999998888\"\r
+
+    }"
+order: 1790097339273
