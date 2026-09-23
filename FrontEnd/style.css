@@ -4,7 +4,7 @@
     --card-bg: #ffffff;
     --primary: #1e293b;
     --primary-hover: #0f172a;
-    --accent: #d97706; /* Tom ambar/barbearia clássica */
+    --accent: #d97706;
     --accent-hover: #b45309;
     --text-main: #334155;
     --text-muted: #64748b;
@@ -21,7 +21,7 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* --- Estilos da Tela de Login --- */
+/* --- Tela de Login --- */
 body.login-body {
     background-color: var(--primary);
     display: flex;
@@ -61,7 +61,7 @@ body.login-body {
     color: var(--text-muted);
 }
 
-/* Abas [Cliente] vs [Barbeiro/Admin] */
+/* Cliente Barbeiro/Admin */
 .profile-tabs {
     display: flex;
     background: var(--bg-main);
@@ -89,7 +89,7 @@ body.login-body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-/* Formulário de Login */
+/* Formurio de Login */
 .login-form .input-group {
     margin-bottom: 16px;
 }
@@ -158,7 +158,7 @@ body.login-body {
     background: var(--accent-hover);
 }
 
-/* --- Estilos do Dashboard e Kanban --- */
+/* --- Dashboard e Kanban --- */
 body.dashboard-body {
     display: flex;
     background-color: var(--bg-main);
@@ -236,7 +236,7 @@ body.dashboard-body {
     font-size: 14px;
 }
 
-/* Conteúdo Principal */
+/* Conteudo Principal */
 .main-content {
     flex: 1;
     padding: 30px;
@@ -321,7 +321,7 @@ body.dashboard-body {
     background: var(--border-color);
 }
 
-/* Grid das Colunas do Barbeiro */
+/* Grid Colunas Barbeiro */
 .kanban-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -376,7 +376,7 @@ body.dashboard-body {
     width: 45px;
 }
 
-/* Cards de Agendamento */
+/* Cards Agendamento */
 .appointment-card {
     flex: 1;
     border-radius: 6px;
@@ -525,7 +525,7 @@ body.dashboard-body {
     width: 250px;
 }
 
-/* Chat Agente IA */
+/* IA */
 .ai-chat-container {
     background: var(--card-bg);
     border-radius: 12px;
