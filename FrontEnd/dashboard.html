@@ -9,7 +9,7 @@
 </head>
 <body class="dashboard-body">
 
-    <!-- Menu de Navegação Lateral -->
+    <!-- Menu Lateral -->
     <aside class="sidebar" id="adminSidebar">
         <div class="sidebar-brand">
             <i class="fa-solid fa-scissors"></i>
@@ -27,7 +27,6 @@
         </div>
     </aside>
 
-    <!-- Conteúdo Principal -->
     <main class="main-content">
         <header class="topbar">
             <h2 id="pageTitle">Visão Geral da Agenda</h2>
@@ -37,9 +36,9 @@
             </div>
         </header>
 
-        <!-- ================= VIEWS DE ADMIN ================= -->
+        <!-- VIEWS  ADMIN -->
         <div id="adminViewsContainer">
-            <!-- 1. Agenda Kanban -->
+            <!-- Agenda Kanban -->
             <div class="admin-view active" id="view-agenda">
                 <div class="kanban-section">
                     <div class="section-header">
@@ -51,12 +50,12 @@
                         </div>
                     </div>
                     <div class="kanban-grid" id="kanbanGridContainer">
-                        <!-- Renderizado via JS -->
+                        <!-- JS -->
                     </div>
                 </div>
             </div>
 
-            <!-- 2. Gestão de Serviços -->
+            <!-- Gestão Serviços -->
             <div class="admin-view" id="view-servicos">
                 <div class="crud-container">
                     <div class="section-header">
@@ -66,13 +65,13 @@
                     <table class="crud-table">
                         <thead><tr><th>Nome do Serviço</th><th>Preço</th><th>Duração</th><th>Ações</th></tr></thead>
                         <tbody id="tableServicosBody">
-                            <!-- Preenchido via JS -->
+                            <!--  JS -->
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- 3. Gestão de Barbeiros -->
+            <!-- Gestão Barbeiros -->
             <div class="admin-view" id="view-barbeiros">
                 <div class="crud-container">
                     <div class="section-header">
@@ -82,13 +81,13 @@
                     <table class="crud-table">
                         <thead><tr><th>Nome</th><th>Especialidade</th><th>Telefone</th><th>Escala</th><th>Ações</th></tr></thead>
                         <tbody id="tableBarbeirosBody">
-                            <!-- Preenchido via JS -->
+                            <!-- JS -->
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- 4. Gestão de Clientes -->
+            <!-- Gestão Clientes -->
             <div class="admin-view" id="view-clientes">
                 <div class="crud-container">
                     <div class="section-header">
@@ -104,7 +103,7 @@
                 </div>
             </div>
 
-            <!-- 5. Agente IA -->
+            <!-- Agente IA -->
             <div class="admin-view" id="view-ai">
                 <div class="ai-chat-container">
                     <div class="ai-chat-box" id="aiChatBox">
@@ -118,7 +117,7 @@
             </div>
         </div>
 
-        <!-- ================= VIEW DE CLIENTE (Agendamento) ================= -->
+        <!-- VIEW LIENTE  -->
         <div id="clientBookingContainer" style="display: none;">
             <div class="booking-wizard">
                 <div class="wizard-steps-indicator">
@@ -131,14 +130,12 @@
                 <div class="wizard-step-content active" id="step-1">
                     <h3>Escolha o Serviço</h3>
                     <div class="cards-selector-grid" id="clientServiceGrid">
-                        <!-- Dinâmico -->
                     </div>
                 </div>
 
                 <div class="wizard-step-content" id="step-2">
                     <h3>Escolha o Barbeiro de Preferência</h3>
                     <div class="cards-selector-grid" id="clientBarberGrid">
-                        <!-- Dinâmico -->
                     </div>
                 </div>
 
@@ -177,7 +174,7 @@
         </div>
     </main>
 
-    <!-- ================= MODAIS DE CADASTRO E CONFIRMAÇÃO ================= -->
+    <!-- MODAIS CADASTRO E CONFIRMAÇÃO-->
     <!-- Modal Novo Serviço -->
     <div id="modalServico" class="modal-overlay">
         <div class="modal-card">
@@ -205,7 +202,7 @@
         </div>
     </div>
 
-    <!-- Modal Confirmação Genérico -->
+    <!-- Modal Confirmação -->
     <div id="modalConfirm" class="modal-overlay">
         <div class="modal-card" style="text-align: center;">
             <i class="fa-solid fa-triangle-exclamation" style="font-size: 36px; color: var(--danger); margin-bottom: 12px;"></i>
