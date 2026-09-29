@@ -2,6 +2,8 @@ package sgs_barber.service;
 
 import sgs_barber.dto.BarbeiroDTO;
 import sgs_barber.model.Barbeiro;
+import sgs_barber.model.TipoUsuario;
+import sgs_barber.model.Usuario;
 import sgs_barber.repository.BarbeiroRepository;
 import org.springframework.stereotype.Service;
 
@@ -38,6 +40,7 @@ public class BarbeiroService {
         barbeiro.setNome(dto.getNome());
         barbeiro.setTelefone(dto.getTelefone());
         barbeiro.setAtivo(dto.getAtivo());
+        sincronizarUsuario(barbeiro);
         return toDTO(repository.save(barbeiro));
     }
 
@@ -60,6 +63,18 @@ public class BarbeiroService {
         barbeiro.setNome(dto.getNome());
         barbeiro.setTelefone(dto.getTelefone());
         barbeiro.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
+        sincronizarUsuario(barbeiro);
         return barbeiro;
+    }
+
+    private void sincronizarUsuario(Barbeiro barbeiro) {
+        Usuario usuario = barbeiro.getUsuario();
+        if (usuario == null) {
+            usuario = new Usuario();
+            usuario.setTipo(TipoUsuario.BARBEIRO);
+            barbeiro.setUsuario(usuario);
+        }
+        usuario.setNome(barbeiro.getNome());
+        usuario.setTelefone(barbeiro.getTelefone());
     }
 }

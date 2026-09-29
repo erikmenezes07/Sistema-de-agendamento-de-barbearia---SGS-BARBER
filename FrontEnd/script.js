@@ -1,6 +1,7 @@
 let currentProfile = localStorage.getItem('sgs_user_profile') || 'admin';
 let authMode = 'login';
 let currentStep = 1;
+const API_BASE_URL = window.SGS_API_BASE_URL || 'http://localhost:8080/api';
 
 let bookingData = { service: '', price: '', barber: '', date: '24/09/2026', time: '' };
 
@@ -31,6 +32,53 @@ function setStorageData(key, data) {
     localStorage.setItem('sgs_' + key, JSON.stringify(data));
 }
 
+async function apiRequest(endpoint, options = {}) {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+        ...options
+    });
+
+    if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `Erro HTTP ${response.status}`);
+    }
+
+    return response.status === 204 ? null : response.json();
+}
+
+async function loadRemoteData() {
+    if (!document.getElementById('tableBarbeirosBody') && !document.getElementById('clientBookingContainer')) return;
+
+    try {
+        const [barbers, clients] = await Promise.all([
+            apiRequest('/barbeiros'),
+            apiRequest('/clientes')
+        ]);
+
+        setStorageData('barbers', barbers.map(barber => ({
+            id: barber.id,
+            name: barber.nome,
+            specialty: 'Não informada',
+            phone: barber.telefone,
+            scale: barber.ativo ? 'Ativo' : 'Inativo'
+        })));
+        setStorageData('clients', clients.map(client => ({
+            id: client.id,
+            name: client.nome,
+            phone: client.telefone,
+            email: client.email
+        })));
+
+        if (document.getElementById('tableBarbeirosBody')) {
+            renderAdminTables();
+            renderKanban();
+        }
+    } catch (error) {
+        console.error('Não foi possível carregar os dados da API:', error);
+        showToast('API indisponível. Exibindo dados locais.', 'info');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializa localStorage se vazio
     if (!localStorage.getItem('sgs_services')) setStorageData('services', defaultServices);
@@ -50,14 +98,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const authForm = document.getElementById('authForm');
     if (authForm) {
-        authForm.addEventListener('submit', (e) => {
+        authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             if (authMode === 'register') {
                 const name = document.getElementById('reg-name').value;
-                const clients = getStorageData('clients', defaultClients);
-                clients.push({ id: Date.now(), name: name, phone: '(81) 90000-0000', email: 'novo@email.com' });
-                setStorageData('clients', clients);
+                const identifier = document.getElementById('user-identifier').value.trim();
+
+                if (!identifier.includes('@')) {
+                    showToast('Informe um e-mail válido para criar a conta.', 'error');
+                    return;
+                }
+
+                try {
+                    const client = await apiRequest('/clientes', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            nome: name,
+                            email: identifier,
+                            telefone: '(81) 90000-0000'
+                        })
+                    });
+                    const clients = getStorageData('clients', defaultClients);
+                    clients.push({ id: client.id, name: client.nome, phone: client.telefone, email: client.email });
+                    setStorageData('clients', clients);
+                } catch (error) {
+                    console.error('Erro ao cadastrar cliente:', error);
+                    showToast('Não foi possível cadastrar o cliente.', 'error');
+                    return;
+                }
                 
                 showToast('Conta criada com sucesso! Faça login para continuar.', 'success');
                 
@@ -104,6 +173,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAdminTables();
         renderKanban();
     }
+
+    loadRemoteData();
 
     // Menu lateral Admin
     const menuItems = document.querySelectorAll('.menu-item');
@@ -252,19 +323,24 @@ function saveServico(e) {
     showToast('Serviço cadastrado com sucesso!', 'success');
 }
 
-function saveBarbeiro(e) {
+async function saveBarbeiro(e) {
     e.preventDefault();
     const name = document.getElementById('barName').value;
-    const specialty = document.getElementById('barSpec').value;
     const phone = document.getElementById('barPhone').value;
-    const scale = document.getElementById('barScale').value;
 
-    const barbers = getStorageData('barbers', defaultBarbers);
-    barbers.push({ id: Date.now(), name, specialty, phone, scale });
-    setStorageData('barbers', barbers);
+    try {
+        await apiRequest('/barbeiros', {
+            method: 'POST',
+            body: JSON.stringify({ nome: name, telefone: phone, ativo: true })
+        });
+        await loadRemoteData();
+    } catch (error) {
+        console.error('Erro ao cadastrar barbeiro:', error);
+        showToast('Não foi possível cadastrar o barbeiro.', 'error');
+        return;
+    }
 
     closeModal('modalBarbeiro');
-    renderAdminTables();
     showToast('Barbeiro cadastrado com sucesso!', 'success');
 }
 

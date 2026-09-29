@@ -4,11 +4,11 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "barbeiros")
+@Table(name = "usuarios")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Barbeiro {
+public class Usuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,13 +17,13 @@ public class Barbeiro {
     @Column(nullable = false)
     private String nome;
 
+    @Column(unique = true)
+    private String email;
+
     @Column(nullable = false)
     private String telefone;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Boolean ativo = true;
-
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "usuario_id", unique = true)
-    private Usuario usuario;
+    private TipoUsuario tipo;
 }

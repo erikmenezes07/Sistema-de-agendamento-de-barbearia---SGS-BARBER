@@ -23,6 +23,22 @@ Este projeto faz parte da disciplina de **Fábrica de Software**.
 * PostgreSQL 16+
 * Git
 
+### Conexão com o Supabase
+
+O backend usa o PostgreSQL do Supabase por meio da variável de ambiente
+`SUPABASE_DB_PASSWORD`. Antes de iniciar a API, defina essa variável no
+terminal do backend:
+
+```powershell
+$env:SUPABASE_DB_PASSWORD = "sua-senha-do-banco"
+.\mvnw.cmd spring-boot:run
+```
+
+Com a API em `http://localhost:8080`, abra `FrontEnd/login.html` pelo Live
+Server. Os cadastros de clientes e barbeiros são enviados imediatamente para
+`/api/clientes` e `/api/barbeiros`, e os dados do Supabase são carregados ao
+abrir o dashboard.
+
 ### Passo a Passo
 
 1. **Clonar o repositório:**

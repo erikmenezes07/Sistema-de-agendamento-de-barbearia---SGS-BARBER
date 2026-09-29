@@ -22,4 +22,8 @@ public class Cliente {
 
     @Column(nullable = false)
     private String telefone;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "usuario_id", unique = true)
+    private Usuario usuario;
 }
