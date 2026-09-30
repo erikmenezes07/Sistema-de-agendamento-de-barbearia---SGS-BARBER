@@ -2,8 +2,6 @@ package sgs_barber.service;
 
 import sgs_barber.dto.ClienteDTO;
 import sgs_barber.model.Cliente;
-import sgs_barber.model.TipoUsuario;
-import sgs_barber.model.Usuario;
 import sgs_barber.repository.ClienteRepository;
 import org.springframework.stereotype.Service;
 
@@ -40,7 +38,6 @@ public class ClienteService {
         cliente.setNome(dto.getNome());
         cliente.setEmail(dto.getEmail());
         cliente.setTelefone(dto.getTelefone());
-        sincronizarUsuario(cliente);
         return toDTO(repository.save(cliente));
     }
 
@@ -63,19 +60,6 @@ public class ClienteService {
         cliente.setNome(dto.getNome());
         cliente.setEmail(dto.getEmail());
         cliente.setTelefone(dto.getTelefone());
-        sincronizarUsuario(cliente);
         return cliente;
-    }
-
-    private void sincronizarUsuario(Cliente cliente) {
-        Usuario usuario = cliente.getUsuario();
-        if (usuario == null) {
-            usuario = new Usuario();
-            usuario.setTipo(TipoUsuario.CLIENTE);
-            cliente.setUsuario(usuario);
-        }
-        usuario.setNome(cliente.getNome());
-        usuario.setEmail(cliente.getEmail());
-        usuario.setTelefone(cliente.getTelefone());
     }
 }

@@ -581,6 +581,141 @@ body.dashboard-body {
     font-size: 14px;
 }
 
+.ai-chat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ai-agent-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--primary);
+    color: #fff;
+}
+
+/* Modelo real em uso (ou "sem chave"). Fica discreto: e informacao de
+   diagnostico, nao o elemento principal do cabecalho. */
+.ai-modelo-info {
+    font-size: 11px;
+    color: var(--text-muted, #8a8f98);
+    background: rgba(127, 127, 127, 0.12);
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+}
+
+.ai-agent-badge.recomendador {
+    background: var(--accent);
+}
+
+.ai-status {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.ai-status.ocupado {
+    color: var(--accent);
+}
+
+.ai-link-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+/* Rastro das tools consultadas: prova de que o agente leu o banco */
+.ai-trace {
+    align-self: flex-start;
+    max-width: 75%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--bg-main);
+    border: 1px dashed var(--border-color);
+}
+
+.ai-trace-label {
+    width: 100%;
+    font-size: 10px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.ai-trace-tool {
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+}
+
+.ai-trace-tool.erro {
+    color: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.ai-message.aviso {
+    align-self: flex-start;
+    max-width: 75%;
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    color: #9a3412;
+}
+
+.ai-message.bot:disabled,
+.ai-input-area input:disabled {
+    opacity: 0.6;
+}
+
+.ai-hint {
+    margin: 10px 0 0;
+    font-size: 11px;
+    color: var(--text-muted);
+    min-height: 14px;
+}
+
+.ai-typing {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.ai-typing span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: aiBlink 1.2s infinite ease-in-out;
+}
+
+.ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+.ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes aiBlink {
+    0%, 60%, 100% { opacity: 0.25; }
+    30% { opacity: 1; }
+}
+
 /* Wizard de Agendamento (Cliente) */
 .booking-wizard {
     background: var(--card-bg);

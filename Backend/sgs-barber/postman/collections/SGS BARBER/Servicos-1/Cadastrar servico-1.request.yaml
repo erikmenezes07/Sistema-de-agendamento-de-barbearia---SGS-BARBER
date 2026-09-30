@@ -1,6 +1,6 @@
 $kind: http-request
 name: Cadastrar servico
-url: http://localhost:8080/api/servicos
+url: http://localhost:8081/api/servicos
 method: POST
 body:
   type: json

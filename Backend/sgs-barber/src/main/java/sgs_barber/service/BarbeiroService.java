@@ -2,8 +2,6 @@ package sgs_barber.service;
 
 import sgs_barber.dto.BarbeiroDTO;
 import sgs_barber.model.Barbeiro;
-import sgs_barber.model.TipoUsuario;
-import sgs_barber.model.Usuario;
 import sgs_barber.repository.BarbeiroRepository;
 import org.springframework.stereotype.Service;
 
@@ -39,8 +37,9 @@ public class BarbeiroService {
                 .orElseThrow(() -> new RuntimeException("Barbeiro não encontrado com ID: " + id));
         barbeiro.setNome(dto.getNome());
         barbeiro.setTelefone(dto.getTelefone());
+        barbeiro.setFotoUrl(dto.getFotoUrl());
+        barbeiro.setEspecialidades(dto.getEspecialidades());
         barbeiro.setAtivo(dto.getAtivo());
-        sincronizarUsuario(barbeiro);
         return toDTO(repository.save(barbeiro));
     }
 
@@ -53,6 +52,8 @@ public class BarbeiroService {
         dto.setId(barbeiro.getId());
         dto.setNome(barbeiro.getNome());
         dto.setTelefone(barbeiro.getTelefone());
+        dto.setFotoUrl(barbeiro.getFotoUrl());
+        dto.setEspecialidades(barbeiro.getEspecialidades());
         dto.setAtivo(barbeiro.getAtivo());
         return dto;
     }
@@ -62,19 +63,9 @@ public class BarbeiroService {
         barbeiro.setId(dto.getId());
         barbeiro.setNome(dto.getNome());
         barbeiro.setTelefone(dto.getTelefone());
+        barbeiro.setFotoUrl(dto.getFotoUrl());
+        barbeiro.setEspecialidades(dto.getEspecialidades());
         barbeiro.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
-        sincronizarUsuario(barbeiro);
         return barbeiro;
-    }
-
-    private void sincronizarUsuario(Barbeiro barbeiro) {
-        Usuario usuario = barbeiro.getUsuario();
-        if (usuario == null) {
-            usuario = new Usuario();
-            usuario.setTipo(TipoUsuario.BARBEIRO);
-            barbeiro.setUsuario(usuario);
-        }
-        usuario.setNome(barbeiro.getNome());
-        usuario.setTelefone(barbeiro.getTelefone());
     }
 }

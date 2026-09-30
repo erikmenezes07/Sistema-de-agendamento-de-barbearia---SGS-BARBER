@@ -1,5 +1,5 @@
 $kind: http-request
 name: Listar barbeiros
-url: http://localhost:8080/api/barbeiros
+url: http://localhost:8081/api/barbeiros
 method: GET
 order: 4076323525944546

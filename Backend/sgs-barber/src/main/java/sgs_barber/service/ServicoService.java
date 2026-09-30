@@ -36,8 +36,10 @@ public class ServicoService {
         Servico servico = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Serviço não encontrado com ID: " + id));
         servico.setNome(dto.getNome());
+        servico.setDescricao(dto.getDescricao());
         servico.setPreco(dto.getPreco());
         servico.setDuracaoMinutos(dto.getDuracaoMinutos());
+        servico.setCombo(dto.getCombo() != null ? dto.getCombo() : false);
         return toDTO(repository.save(servico));
     }
 
@@ -49,8 +51,10 @@ public class ServicoService {
         ServicoDTO dto = new ServicoDTO();
         dto.setId(servico.getId());
         dto.setNome(servico.getNome());
+        dto.setDescricao(servico.getDescricao());
         dto.setPreco(servico.getPreco());
         dto.setDuracaoMinutos(servico.getDuracaoMinutos());
+        dto.setCombo(servico.getCombo());
         return dto;
     }
 
@@ -58,8 +62,10 @@ public class ServicoService {
         Servico servico = new Servico();
         servico.setId(dto.getId());
         servico.setNome(dto.getNome());
+        servico.setDescricao(dto.getDescricao());
         servico.setPreco(dto.getPreco());
         servico.setDuracaoMinutos(dto.getDuracaoMinutos());
+        servico.setCombo(dto.getCombo() != null ? dto.getCombo() : false);
         return servico;
     }
 }

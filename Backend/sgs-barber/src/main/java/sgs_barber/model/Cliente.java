@@ -23,6 +23,9 @@ public class Cliente {
     @Column(nullable = false)
     private String telefone;
 
+    // Login do cliente, usado pelo UsuarioBackfillService para criar a conta a
+    // partir de um cliente ja cadastrado. Este e o lado dono da relacao, por
+    // isso a coluna usuario_id fica aqui.
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "usuario_id", unique = true)
     private Usuario usuario;

@@ -1,19 +1,37 @@
-# Java / Maven
-**/target/
-**/.mvn/wrapper/maven-wrapper.jar
-
-# Environment and credentials
+# Segredos e configuracao local
+Backend/sgs-barber/ia-local.properties
+Backend/sgs-barber/src/main/resources/application-local.properties
+*.env
 .env
-.env.*
-!.env.example
-**/application-local.properties
+.env.local
 
-# IDE and operating system files
-.idea/
+# Credenciais do banco: nunca versionar
+**/application-secrets.properties
+**/credenciais*.properties
+
+# Build
+target/
+build/
+bin/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# Node / front
+node_modules/
+npm-debug.log*
+
+# IDE
 .vscode/
+.idea/
 *.iml
-.DS_Store
-Thumbs.db
+.settings/
+.classpath
+.project
+bin/
+.vs/
 
-# Logs
-*.log
+# Sistema
+Thumbs.db
+.DS_Store
+desktop.ini

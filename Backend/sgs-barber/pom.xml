@@ -42,6 +42,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
+		<!-- Jackson 3: necessario para serializar o payload de function calling
+		     e as respostas da API REST. No Boot 4 o suporte a JSON nao vem
+		     junto com o starter web. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jackson</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.postgresql</groupId>
@@ -79,6 +86,18 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<!-- O Lombok e um processador de anotacoes. Sem esta opcao o
+					     javac nao o executa e todos os getters/setters gerados
+					     desaparecem, quebrando a compilacao inteira. -->
+					<proc>full</proc>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
 				<executions>
 					<execution>
 						<id>default-compile</id>

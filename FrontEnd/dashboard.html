@@ -106,13 +106,18 @@
             <!-- Agente IA -->
             <div class="admin-view" id="view-ai">
                 <div class="ai-chat-container">
-                    <div class="ai-chat-box" id="aiChatBox">
-                        <div class="ai-message bot">Olá! Sou o Agente IA do SGS Barber. Como posso ajudar na gestão ou sugerir encaixes hoje?</div>
+                    <div class="ai-chat-header" id="aiChatHeader" hidden>
+                        <span class="ai-agent-badge" id="aiAgentBadge">Agendador</span>
+                        <span class="ai-modelo-info" id="aiModeloInfo">conectando...</span>
+                        <span class="ai-status" id="aiStatus">pronto</span>
+                        <button class="ai-link-btn" type="button" onclick="reiniciarConversaIA()">Nova conversa</button>
                     </div>
+                    <div class="ai-chat-box" id="aiChatBox"></div>
                     <div class="ai-input-area">
                         <input type="text" id="aiUserInput" placeholder="Digite sua mensagem para a IA..." onkeypress="if(event.key === 'Enter') handleAiSend()">
-                        <button class="btn-primary" style="width: auto;" onclick="handleAiSend()"><i class="fa-solid fa-paper-plane"></i></button>
+                        <button class="btn-primary" style="width: auto;" id="aiSendBtn" onclick="handleAiSend()"><i class="fa-solid fa-paper-plane"></i></button>
                     </div>
+                    <p class="ai-hint" id="aiHint"></p>
                 </div>
             </div>
         </div>

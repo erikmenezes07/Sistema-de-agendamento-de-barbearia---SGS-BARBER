@@ -1,6 +1,6 @@
 $kind: http-request
 name: Listar servicos
-url: http://localhost:8080/api/servicos
+url: http://localhost:8081/api/servicos
 method: GET
 body:
   type: json

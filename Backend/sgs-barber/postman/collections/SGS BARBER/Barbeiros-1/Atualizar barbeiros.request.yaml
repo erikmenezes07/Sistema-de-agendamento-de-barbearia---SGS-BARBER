@@ -1,5 +1,5 @@
 $kind: http-request
-url: http://localhost:8080/api/barbeiros/2
+url: http://localhost:8081/api/barbeiros/2
 method: PUT
 body:
   type: json
