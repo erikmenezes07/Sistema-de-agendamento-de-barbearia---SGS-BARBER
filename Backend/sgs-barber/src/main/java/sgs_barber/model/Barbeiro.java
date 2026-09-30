@@ -45,6 +45,13 @@ public class Barbeiro {
     @Column(nullable = false)
     private Boolean ativo = true;
 
+    // Login do barbeiro, usado pelo UsuarioBackfillService para criar a conta a
+    // partir de um barbeiro ja cadastrado. Este e o lado dono da relacao, por
+    // isso a coluna usuario_id fica aqui.
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "usuario_id", unique = true)
+    private Usuario usuario;
+
     public List<String> getEspecialidades() {
         if (especialidades == null || especialidades.isBlank()) {
             return new ArrayList<>();
