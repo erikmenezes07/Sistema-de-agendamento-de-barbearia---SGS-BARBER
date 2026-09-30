@@ -1,0 +1,16 @@
+$kind: http-request
+name: Cadastrar barbeiros
+url: http://localhost:8081/api/barbeiros
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nome\": \"Igor Barbeiro\",\r
+
+    \  \"telefone\": \"81988887777\",\r
+
+    \  \"ativo\": true\r
+
+    }"
+order: 1790097513047

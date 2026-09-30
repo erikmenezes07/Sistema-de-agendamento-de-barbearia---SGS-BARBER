@@ -1,0 +1,15 @@
+$kind: http-request
+url: http://localhost:8081/api/servicos/2
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \  \"nome\": \"Corte de Cabelo + Barba Completa\",\r
+
+    \  \"preco\": 65.00,\r
+
+    \  \"duracaoMinutos\": 60\r
+
+    }"
+order: 3691496847241494

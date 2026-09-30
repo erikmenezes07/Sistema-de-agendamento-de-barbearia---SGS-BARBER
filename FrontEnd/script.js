@@ -2,6 +2,133 @@ let currentProfile = localStorage.getItem('sgs_user_profile') || 'admin';
 let authMode = 'login';
 let currentStep = 1;
 
+// ============================ Agente de IA ============================
+// O navegador NUNCA fala com o provedor de modelo: envia a mensagem para
+// POST /api/chat e o back-end decide qual agente responde e quais tools
+// consultar no banco. A chave da IA fica somente no servidor.
+
+// A porta do back-end nao pode ser fixada aqui. O Spring Boot sobe em 8080 por
+// padrao, mas em desenvolvimento e comum rodar em 8081 (ou 5173/3000 com
+// proxy), e um valor fixo no front vira "servidor nao encontrado" sem aviso
+// util. Em vez disso, o front pergunta /api/chat/config em uma lista de
+// enderecos plausiveis e usa o primeiro que responder. A ordem importa: mesma
+// origem primeiro (caso o front e a API sejam servidos juntos), depois as
+// portas de desenvolvimento mais comuns.
+const CANDIDATOS_API = [
+    'http://localhost:8080',
+    'http://localhost:8081',
+    'http://127.0.0.1:8080',
+    'http://127.0.0.1:8081',
+    'http://localhost:5173',
+    'http://localhost:3000'
+];
+
+let API_BASE = (window.SGS_API_BASE || '').replace(/\/$/, '');
+let apiResolvida = API_BASE !== '';
+
+function candidatosDaApi() {
+    if (API_BASE) {
+        return [API_BASE];
+    }
+    // Servido por http(s), a propria origem e a aposta mais provavel.
+    if (location.protocol === 'http:' || location.protocol === 'https:') {
+        return [location.origin].concat(CANDIDATOS_API);
+    }
+    return CANDIDATOS_API;
+}
+
+/**
+ * Descobre em qual endereco a API responde. Faz so uma vez e memoriza, senao
+ * toda mensagem repetiria a varredura de portas.
+ *
+ * Repete a varredura algumas vezes antes de desistir, porque o caso comum nao
+ * e "backend nunca existiu": e a pagina aberta enquanto o Spring Boot ainda
+ * esta subindo. Sem essa espera, abrir o front antes do backend dava erro
+ * imediato e obrigava a recarregar a pagina na mao.
+ */
+const TENTATIVAS_DE_BUSCA = 4;
+const ESPERA_ENTRE_BUSCAS_MS = 1500;
+
+async function resolverApiBase() {
+    if (apiResolvida) {
+        return API_BASE;
+    }
+    const tentou = [];
+    for (let rodada = 1; rodada <= TENTATIVAS_DE_BUSCA; rodada++) {
+        for (const candidato of candidatosDaApi()) {
+            tentou.push(candidato);
+            try {
+                const resposta = await fetch(candidato + '/api/chat/config', { cache: 'no-store' });
+                if (resposta.ok) {
+                    API_BASE = candidato;
+                    apiResolvida = true;
+                    return API_BASE;
+                }
+            } catch (e) { /* porta fechada: tenta a proxima */ }
+        }
+        if (rodada < TENTATIVAS_DE_BUSCA) {
+            definirStatus('aguardando o servidor...', true);
+            await esperar(ESPERA_ENTRE_BUSCAS_MS);
+        }
+    }
+    definirStatus('servidor offline', true);
+    throw new Error('Nao achei o backend do SGS-BARBER. Tentei:\n- ' + tentou.join('\n- ')
+        + '\n\nSuba o Spring Boot (cd Backend/sgs-barber e mvnw.cmd spring-boot:run) '
+        + 'ou defina window.SGS_API_BASE no HTML antes de carregar o script.js.');
+}
+
+function esperar(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const CHAT_IA = {
+    // Identifica a sessao no servidor. Persistido para o historico sobreviver
+    // a F5; o back-end agrupa as mensagens por este id.
+    usuarioId: localStorage.getItem('sgs_chat_usuario') || gerarUsuarioId(),
+    clienteId: null,
+    enviando: false,
+    config: null
+};
+
+function gerarUsuarioId() {
+    const id = 'web-' + (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
+    localStorage.setItem('sgs_chat_usuario', id);
+    return id;
+}
+
+// Pequeno wrapper de fetch: o front inteiro e localStorage, entao o chat e o
+// unico lugar que fala HTTP. Centralizar aqui evita repetir tratamento de erro.
+async function apiPost(caminho, corpo) {
+    const base = await resolverApiBase();
+    // Se o backend só subiu depois da pagina carregar, o badge ainda está
+    // "servidor offline". A checagem acontece na primeira mensagem que dá
+    // certo, então o estado se corrige sozinho sem o usuario recarregar a
+    // pagina - que era o que acontecia antes.
+    if (!CHAT_IA.config) {
+        carregarConfigIA();
+    }
+    let resposta;
+    try {
+        resposta = await fetch(base + caminho, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(corpo)
+        });
+    } catch (e) {
+        throw new Error('Perdi a conexao com o servidor em ' + base + '. Ele ainda esta rodando?');
+    }
+
+    if (!resposta.ok) {
+        let detalhe = '';
+        try {
+            const erro = await resposta.json();
+            detalhe = erro.message || erro.error || '';
+        } catch (e) { /* resposta sem JSON */ }
+        throw new Error(detalhe || ('Erro ' + resposta.status + ' do servidor.'));
+    }
+    return resposta.json();
+}
+
 let bookingData = { service: '', price: '', barber: '', date: '24/09/2026', time: '' };
 
 // Estado inicial carregado no LocalStorage se estiver vazio
@@ -32,6 +159,11 @@ function setStorageData(key, data) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Consulta /api/chat/config logo no carregamento, e nao so ao abrir a aba:
+    // se o servidor desligou o assistente (ia.agendador-ativo=false), o menu
+    // precisa sumir antes de o usuario clicar nele.
+    carregarConfigIA();
+
     // Inicializa localStorage se vazio
     if (!localStorage.getItem('sgs_services')) setStorageData('services', defaultServices);
     if (!localStorage.getItem('sgs_barbers')) setStorageData('barbers', defaultBarbers);
@@ -120,6 +252,16 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const pageTitle = document.getElementById('pageTitle');
             if(pageTitle) pageTitle.textContent = item.textContent.trim();
+
+            // primeira vez que a aba do assistente abre, monta a saudacao e
+            // pergunta ao servidor qual modelo esta de fato ativo
+    if(targetId === 'view-ai') {
+        // A view pode ter sido removida por aplicarAgendadorDesativado().
+        const chatBox = document.getElementById('aiChatBox');
+        if(chatBox && !chatBox.hasChildNodes()) {
+            saudacaoIA();
+        }
+    }
         });
     });
 });
@@ -380,22 +522,231 @@ function changeStep(direction) {
     if(nextBtn) nextBtn.style.display = currentStep < 4 ? 'block' : 'none';
 }
 
-// Simulação simples do Chat da IA
-function handleAiSend() {
+// Chat do Agente IA: envia para POST /api/chat e desenha a resposta real,
+// incluindo de qual agente veio e quais tools ele consultou no banco.
+async function handleAiSend() {
     const input = document.getElementById('aiUserInput');
     const box = document.getElementById('aiChatBox');
-    if(!input || !box || !input.value.trim()) return;
+    if (!input || !box || !input.value.trim() || CHAT_IA.enviando) return;
 
-    box.innerHTML += `<div class="ai-message user">${input.value}</div>`;
-    const text = input.value;
+    const texto = input.value.trim();
+    box.innerHTML += `<div class="ai-message user">${escaparHtml(texto)}</div>`;
     input.value = '';
+    box.scrollTop = box.scrollHeight;
 
-    setTimeout(() => {
-        let reply = "Entendido. Analisei a agenda e todos os horários estão sincronizados perfeitamente.";
-        if(text.toLowerCase().includes('horário') || text.toLowerCase().includes('livre')) {
-            reply = "Os barbeiros possuem horários livres nos períodos das 08:30 e 10:00 hoje.";
-        }
-        box.innerHTML += `<div class="ai-message bot">${reply}</div>`;
+    bloquearChat(true);
+    mostrarDigitando(box);
+    definirStatus('consultando a agenda...', true);
+
+    try {
+        const resposta = await apiPost('/api/chat', {
+            // O nome do campo precisa bater com ChatRequestDTO: 'usuarioId',
+            // e nao 'usuario_id' — o campo errado devolve 400.
+            usuarioId: CHAT_IA.usuarioId,
+            mensagem: texto,
+            clienteId: CHAT_IA.clienteId
+        });
+
+        removerDigitando(box);
+        desenharRespostaIA(box, resposta);
+    } catch (e) {
+        removerDigitando(box);
+        box.innerHTML += `<div class="ai-message bot">Nao consegui falar com o assistente: ${escaparHtml(e.message)}</div>`;
+        definirStatus('erro na chamada', true);
         box.scrollTop = box.scrollHeight;
-    }, 800);
+    } finally {
+        bloquearChat(false);
+    }
+}
+
+// O trace usa "nome"; "ferramenta" e aceito por compatibilidade com respostas
+// antigas, para o rotulo nunca sair vazio.
+function nomeDaTool(t) {
+    return (t && (t.nome || t.ferramenta)) || 'ferramenta';
+}
+
+function toolFalhou(t) {
+    if (!t) return false;
+    if (t.erro) return true;
+    return typeof t.resultado === 'string' && t.resultado.indexOf('erro') !== -1;
+}
+
+function resumoTool(t) {
+    if (!t) return '';
+    const base = nomeDaTool(t);
+    if (t.argumentos && Object.keys(t.argumentos).length) {
+        return base + ' ' + JSON.stringify(t.argumentos);
+    }
+    return t.resultado ? base + ' - ' + String(t.resultado).slice(0, 120) : base;
+}
+function desenharRespostaIA(box, r) {
+    if (r.encaminhou && r.agente) marcarAgente(r.agente);
+
+    box.innerHTML += `<div class="ai-message bot">${formatarTexto(r.mensagem)}</div>`;
+
+    if (r.ferramentasUsadas && r.ferramentasUsadas.length) {
+        box.innerHTML += `<div class="ai-trace"><span class="ai-trace-label">consultou no banco</span>${
+            r.ferramentasUsadas.map(t =>
+                `<span class="ai-trace-tool${toolFalhou(t) ? ' erro' : ''}" title="${escaparHtml(resumoTool(t))}">${escaparHtml(nomeDaTool(t))}</span>`
+            ).join('')}</div>`;
+    }
+
+    if (r.aviso) {
+        box.innerHTML += `<div class="ai-message aviso">${escaparHtml(r.aviso)}</div>`;
+    }
+
+    marcarAgente(r.agente);
+    definirStatus('pronto', false);
+    box.scrollTop = box.scrollHeight;
+}
+
+// Badge do cabecalho: mostra com quem a conversa esta.
+function marcarAgente(tipo) {
+    const badge = document.getElementById('aiAgentBadge');
+    const header = document.getElementById('aiChatHeader');
+    if (!badge || !header) return;
+    header.hidden = false;
+    const recomendador = tipo === 'RECOMENDADOR';
+    badge.textContent = recomendador ? 'Recomendador' : 'Agendador';
+    badge.classList.toggle('recomendador', recomendador);
+}
+
+function definirStatus(texto, ocupado) {
+    const status = document.getElementById('aiStatus');
+    if (!status) return;
+    status.textContent = texto;
+    status.classList.toggle('ocupado', !!ocupado);
+}
+
+function bloquearChat(bloqueado) {
+    CHAT_IA.enviando = bloqueado;
+    const input = document.getElementById('aiUserInput');
+    const btn = document.getElementById('aiSendBtn');
+    if (input) input.disabled = bloqueado;
+    if (btn) btn.disabled = bloqueado;
+}
+
+function mostrarDigitando(box) {
+    box.innerHTML += `<div class="ai-message bot" id="aiTyping"><span class="ai-typing"><span></span><span></span><span></span></span></div>`;
+    box.scrollTop = box.scrollHeight;
+}
+
+function removerDigitando(box) {
+    const el = document.getElementById('aiTyping');
+    if (el) el.remove();
+}
+
+// A IA devolve markdown simples (**negrito**) e listas com "- ".
+function formatarTexto(texto) {
+    if (!texto) return '';
+    const linhas = String(texto).split('\n');
+    const html = [];
+    let emLista = false;
+
+    linhas.forEach(linha => {
+        const item = linha.match(/^\s*[-*]\s+(.*)$/);
+        if (item) {
+            if (!emLista) { html.push('<ul>'); emLista = true; }
+            html.push(`<li>${formatarInline(item[1])}</li>`);
+            return;
+        }
+        if (emLista) { html.push('</ul>'); emLista = false; }
+        if (linha.trim()) html.push(`<p>${formatarInline(linha)}</p>`);
+    });
+
+    if (emLista) html.push('</ul>');
+    return html.join('');
+}
+
+function formatarInline(texto) {
+    return escaparHtml(texto).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+
+function escaparHtml(texto) {
+    return String(texto == null ? '' : texto)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// "Nova conversa": limpa o historico no servidor, nao so na tela.
+async function reiniciarConversaIA() {
+    const box = document.getElementById('aiChatBox');
+    if (!box || CHAT_IA.enviando) return;
+
+    bloquearChat(true);
+    try {
+        await apiPost('/api/chat/reiniciar/' + encodeURIComponent(CHAT_IA.usuarioId), {});
+        box.innerHTML = '';
+        saudacaoIA();
+        definirStatus('pronto', false);
+    } catch (e) {
+        definirStatus('erro: ' + e.message, true);
+    } finally {
+        bloquearChat(false);
+    }
+}
+
+function saudacaoIA() {
+    const box = document.getElementById('aiChatBox');
+    if (!box) return;
+    box.innerHTML = `<div class="ai-message bot">Ola! Sou o assistente do SGS Barber. Posso mostrar os horarios livres, agendar, cancelar, e tambem sugerir corte, servico e quem faz melhor cada estilo.</div>`;
+    box.innerHTML += `<div class="ai-trace"><span class="ai-trace-label">modelo</span><span class="ai-trace-tool" id="aiModeloInfo">verificando...</span></div>`;
+    carregarConfigIA();
+}
+
+// Le /api/chat/config para mostrar o estado real da integracao (chave, modelo,
+// fallback) em vez de prometer um modelo que talvez nao esteja ativo.
+async function carregarConfigIA() {
+    const info = document.getElementById('aiModeloInfo');
+    const hint = document.getElementById('aiHint');
+    try {
+        const base = await resolverApiBase();
+        const resposta = await fetch(base + '/api/chat/config', { cache: 'no-store' });
+        if (!resposta.ok) throw new Error('HTTP ' + resposta.status);
+        const cfg = await resposta.json();
+        CHAT_IA.config = cfg;
+
+        if (info) {
+            info.textContent = cfg.modelo + (cfg.chave_configurada ? '' : ' (sem chave)');
+        }
+        if (hint) {
+            hint.textContent = cfg.chave_configurada
+                ? 'Respostas pelo modelo ' + cfg.modelo + '.'
+                : 'Sem IA_API_KEY: as respostas sao montadas por regras e o assistente nao confirma reservas.';
+        }
+        if (cfg.agendador_ativo === false) {
+            // O servidor desligou o assistente: esconder o menu e a view evita
+            // o usuario digitar e receber 503 sem entender o motivo.
+            aplicarAgendadorDesativado();
+        }
+    } catch (e) {
+        if (info) info.textContent = 'servidor offline';
+        if (hint) {
+            // Botao de reconectar: subir o Spring Boot leva ~50s com o Maven,
+            // e obrigar o usuario a dar F5 para atualizar o estado e chato.
+            // Aqui ele so clica e o front procura o backend de novo.
+            hint.innerHTML = 'Nao consegui falar com o Spring Boot. Suba o backend '
+                + '(cd Backend/sgs-barber e mvnw.cmd spring-boot:run) e depois '
+                + '<button type="button" class="ai-link-btn" onclick="reconectarBackend()">reconectar</button>.';
+        }
+    }
+}
+
+/** Tenta achar o backend de novo, sem recarregar a pagina. */
+async function reconectarBackend() {
+    apiResolvida = false;
+    CHAT_IA.config = null;
+    definirStatus('procurando o servidor...', true);
+    await carregarConfigIA();
+    if (CHAT_IA.config) {
+        definirStatus('pronto');
+    }
+}
+
+/** Remove o assistente da navegacao quando o servidor o desligou. */
+function aplicarAgendadorDesativado() {
+    const menu = document.querySelector('[data-target="view-ai"]');
+    if (menu) menu.parentElement ? menu.parentElement.remove() : menu.remove();
+    const view = document.getElementById('view-ai');
+    if (view) view.remove();
 }

@@ -1,0 +1,5 @@
+$kind: http-request
+name: Listar clientes
+url: http://localhost:8081/api/clientes
+method: GET
+order: 3234063542053774

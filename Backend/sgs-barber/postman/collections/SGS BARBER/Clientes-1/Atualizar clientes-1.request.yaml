@@ -1,0 +1,13 @@
+$kind: http-request
+name: Atualizar clientes
+url: http://localhost:8081/api/clientes/3
+method: PUT
+body:
+  type: json
+  content: |-
+    {
+      "nome": "Wesley Gonçalves da Silva",
+      "email": "wesley.novo@email.com",
+      "telefone": "81999990000"
+    }
+order: 3759849451134149

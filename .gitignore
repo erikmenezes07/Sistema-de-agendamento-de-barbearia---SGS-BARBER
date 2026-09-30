@@ -1,0 +1,37 @@
+# Segredos e configuracao local
+Backend/sgs-barber/ia-local.properties
+Backend/sgs-barber/src/main/resources/application-local.properties
+*.env
+.env
+.env.local
+
+# Credenciais do banco: nunca versionar
+**/application-secrets.properties
+**/credenciais*.properties
+
+# Build
+target/
+build/
+bin/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# Node / front
+node_modules/
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.iml
+.settings/
+.classpath
+.project
+bin/
+.vs/
+
+# Sistema
+Thumbs.db
+.DS_Store
+desktop.ini

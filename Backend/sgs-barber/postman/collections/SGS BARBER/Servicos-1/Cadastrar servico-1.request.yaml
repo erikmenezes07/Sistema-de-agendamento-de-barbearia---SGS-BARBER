@@ -1,0 +1,16 @@
+$kind: http-request
+name: Cadastrar servico
+url: http://localhost:8081/api/servicos
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"nome\": \"Corte + Barba\",\r
+
+    \  \"preco\": 60.00,\r
+
+    \  \"duracaoMinutos\": 45\r
+
+    }"
+order: 1790097622033
