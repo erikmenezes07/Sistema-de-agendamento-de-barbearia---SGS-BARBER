@@ -1,0 +1,25 @@
+# Java / Maven build artifacts
+**/target/
+**/.mvn/wrapper/maven-wrapper.jar
+
+# Environment and credentials
+.env
+.env.*
+!.env.example
+**/application-local.properties
+
+# IDE and operating system files
+.idea/
+*.iml
+.vscode/*
+!/.vscode/launch.json
+**/.vscode/*
+.DS_Store
+Thumbs.db
+*.log
+
+# Arquivos legados do repositório antigo
+Backend/
+Database/
+IA/
+legacy-frontend/

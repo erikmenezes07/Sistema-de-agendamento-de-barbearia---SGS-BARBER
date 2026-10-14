@@ -1,0 +1,1 @@
+package com.sgsbarber.repository; import com.sgsbarber.model.AppointmentProductModel; import org.springframework.data.jpa.repository.JpaRepository; import java.util.List; public interface AppointmentProductRepository extends JpaRepository<AppointmentProductModel,Long>{List<AppointmentProductModel> findByAppointmentId(Long appointmentId);}

@@ -1,0 +1,1076 @@
+SGS BARBER — TUTORIAL DE INTEGRAÇÃO
+====================================
+Versão: Front-end completo + contratos para Backend, Banco de Dados e IA
+
+IMPORTANTE
+----------
+Este projeto contém SOMENTE o FRONT-END.
+
+Não existe neste pacote:
+- banco de dados real;
+- servidor backend real;
+- API de IA real;
+- chave de OpenAI/Gemini/Anthropic ou outra IA;
+- automação real de WhatsApp;
+- pagamento real.
+
+O front-end funciona em modo demonstração usando localStorage.
+Quando o backend estiver pronto, config.js deve ser alterado para USE_API=true.
+
+OBJETIVO DA EQUIPE
+------------------
+A arquitetura foi pensada assim:
+
+CLIENTE / BARBEIRO
+        |
+        v
+HTML + CSS + app.js
+        |
+        v
+api.js (Store)
+        |
+        v
+BACKEND REST
+        |
+        +------> BANCO DE DADOS
+        |
+        +------> SERVIÇO DE IA (quando necessário)
+        |
+        +------> WhatsApp / calendário / pagamentos futuros
+
+O front-end NÃO deve acessar o banco diretamente.
+O front-end NÃO deve guardar segredo ou chave de IA.
+O backend deve validar tudo novamente, principalmente disponibilidade de horário,
+permissões, autenticação e valores financeiros.
+
+============================================================
+1. O QUE CADA PESSOA DEVE FAZER
+============================================================
+
+1.1 BANCO DE DADOS
+------------------
+Responsável por armazenar os dados permanentemente.
+
+Pode ser PostgreSQL, MySQL, MariaDB ou outro banco relacional.
+
+Tabelas recomendadas:
+
+users
+- id
+- role (barber, client, admin)
+- name
+- email
+- phone
+- cpf
+- password_hash
+- client_id
+- barber_id
+- active
+- created_at
+- updated_at
+
+barbers
+- id
+- name
+- specialty
+- specialties (JSON ou tabela separada)
+- photo_url
+- phone
+- email
+- commission_percent
+- active
+- created_at
+- updated_at
+
+barber_services
+- barber_id
+- service_id
+
+services
+- id
+- name
+- description
+- price
+- duration_minutes
+- active
+- created_at
+- updated_at
+
+clients
+- id
+- name
+- phone
+- email
+- cpf
+- birth_date
+- favorite_barber_id
+- notes
+- preferences_json
+- created_at
+- updated_at
+
+appointments
+- id
+- client_id
+- barber_id
+- service_id
+- date
+- start_time
+- end_time
+- duration_minutes
+- buffer_minutes
+- status
+- price
+- extras_total
+- discount
+- final_total
+- payment_method
+- checkout_note
+- client_preferences_json
+- created_at
+- confirmed_at
+- completed_at
+- cancelled_at
+
+blocks
+- id
+- barber_id (pode ser NULL para bloquear a loja inteira)
+- date
+- start_time
+- end_time
+- reason
+
+barber_schedules
+- id
+- barber_id
+- weekday
+- type (working, day_off, vacation)
+- open_time
+- close_time
+- break_start
+- break_end
+- buffer_minutes
+
+waitlist
+- id
+- client_id
+- barber_id
+- date
+- preferred_period
+- status
+- created_at
+
+products
+- id
+- name
+- price
+- stock
+- active
+
+appointment_products
+- id
+- appointment_id
+- product_id
+- quantity
+- unit_price
+- total
+
+ratings
+- id
+- appointment_id
+- client_id
+- barber_id
+- shop_rating
+- barber_rating
+- comment
+- created_at
+
+notifications
+- id
+- user_id
+- type
+- title
+- message
+- read_at
+- created_at
+
+business_profile
+- id
+- name
+- description
+- phone
+- whatsapp
+- instagram
+- address
+- city
+- latitude
+- longitude
+- logo_url
+- created_at
+- updated_at
+
+============================================================
+2. AUTENTICAÇÃO E SEGURANÇA
+============================================================
+
+O front atualmente usa sessionStorage apenas para demonstração.
+Na versão real:
+
+POST /api/auth/login
+POST /api/auth/register
+POST /api/auth/logout
+GET  /api/auth/me
+
+A senha NUNCA deve ser armazenada em texto puro.
+Usar hash seguro no backend.
+
+O backend deve reconhecer os papéis:
+- admin/dono
+- barber
+- client
+
+Permissões sugeridas:
+
+ADMIN/DONO:
+- todos os barbeiros
+- todos os clientes
+- financeiro geral
+- serviços
+- produtos
+- configurações
+- relatórios
+- escalas
+
+BARBEIRO:
+- própria agenda
+- próprios atendimentos
+- próprios clientes conforme regra da empresa
+- própria comissão
+- fechamento de atendimento
+
+CLIENTE:
+- próprios dados
+- próprios agendamentos
+- avaliações próprias
+- barbeiro favorito
+- preferências próprias
+
+Nunca confiar no role enviado pelo navegador.
+O backend deve validar o usuário autenticado em cada operação protegida.
+
+============================================================
+3. CONTRATO BÁSICO DA API
+============================================================
+
+O arquivo api.js já possui a camada Store.
+Com USE_API=true ele espera endpoints REST no padrão:
+
+GET    /api/{resource}
+GET    /api/{resource}/{id}
+POST   /api/{resource}
+PUT    /api/{resource}/{id}
+DELETE /api/{resource}/{id}
+
+Recursos principais:
+
+/api/users
+/api/barbers
+/api/services
+/api/clients
+/api/appointments
+/api/blocks
+/api/products
+/api/waitlist
+/api/ratings
+/api/notifications
+/api/barberSchedules
+/api/businessProfile
+
+O backend pode criar endpoints especializados quando uma operação exigir
+regra de negócio. Isso é recomendado para disponibilidade e fechamento.
+
+============================================================
+4. AGENDAMENTO — REGRA MAIS IMPORTANTE
+============================================================
+
+O front mostra horários possíveis, mas o backend é a AUTORIDADE FINAL.
+
+Endpoint recomendado:
+
+GET /api/availability?barberId=1001&serviceId=3&date=2026-10-02
+
+Resposta sugerida:
+
+{
+  "barberId": 1001,
+  "serviceId": 3,
+  "date": "2026-10-02",
+  "slots": [
+    {"time":"08:00","available":true},
+    {"time":"08:30","available":false,"reason":"booked"},
+    {"time":"09:00","available":true}
+  ]
+}
+
+O backend deve considerar:
+- expediente do barbeiro;
+- dia de folga;
+- férias;
+- intervalo;
+- bloqueios;
+- duração do serviço;
+- buffer;
+- agendamentos existentes;
+- status cancelado/no-show;
+- antecedência mínima, se configurada.
+
+Ao criar a reserva:
+
+POST /api/appointments
+
+O backend deve verificar a disponibilidade NOVAMENTE dentro da transação.
+
+Nunca confiar apenas no horário enviado pelo front-end.
+
+============================================================
+5. FLUXO DO CLIENTE
+============================================================
+
+O fluxo atual é:
+
+1. escolher barbeiro
+2. abrir perfil do barbeiro
+3. escolher/favoritar barbeiro
+4. escolher serviço
+5. escolher data
+6. consultar disponibilidade
+7. escolher horário
+8. informar dados
+9. confirmar
+10. salvar no calendário ou abrir WhatsApp
+
+O front não deve permitir que a seleção de serviço apareça antes do barbeiro.
+
+O endpoint de serviços pode retornar todos, mas o front usa serviceIds do
+barbeiro para mostrar somente os serviços vinculados.
+
+============================================================
+6. PERFIL DO BARBEIRO
+============================================================
+
+Cada barbeiro pode ter:
+- nome
+- foto
+- especialidade
+- lista de especialidades
+- serviços
+- horários
+- avaliações
+- nota média
+
+Endpoint:
+
+GET /api/barbers/{id}
+GET /api/barbers/{id}/services
+GET /api/barbers/{id}/schedule
+GET /api/barbers/{id}/ratings
+
+A média de avaliação deve ser calculada no backend ou fornecida pela API.
+
+O front possui fallback para "Novo" quando ainda não existem avaliações.
+
+============================================================
+7. BARBEIRO FAVORITO
+============================================================
+
+O cliente pode escolher um barbeiro favorito.
+
+Endpoint recomendado:
+
+PUT /api/clients/{clientId}/favorite-barber
+
+Body:
+{
+  "barberId": 1001
+}
+
+O backend deve validar se o barbeiro existe e está ativo.
+
+No front atual, localStorage é usado apenas como fallback.
+
+============================================================
+8. AVALIAÇÕES
+============================================================
+
+A avaliação só deve ser liberada depois que o atendimento estiver concluído.
+
+POST /api/ratings
+
+Body:
+{
+  "appointmentId": 123,
+  "shopRating": 5,
+  "barberRating": 5,
+  "comment": "Excelente atendimento"
+}
+
+Regras do backend:
+- appointmentId deve pertencer ao cliente autenticado;
+- appointment deve estar concluído;
+- não permitir avaliação duplicada;
+- barberId deve vir do atendimento, não ser confiado ao cliente;
+- validar nota entre 1 e 5.
+
+GET /api/barbers/{id}/ratings
+
+Resposta pode conter:
+- avaliações
+- média
+- quantidade
+
+============================================================
+9. PÁGINA PÚBLICA
+============================================================
+
+index.html é a página pública da barbearia.
+
+Ela deve futuramente receber da API:
+- nome da barbearia
+- logo
+- descrição
+- endereço
+- telefone
+- WhatsApp
+- Instagram
+- horários
+- serviços
+- barbeiros
+- avaliações
+
+Endpoint:
+
+GET /api/public/business
+GET /api/public/services
+GET /api/public/barbers
+GET /api/public/ratings
+
+A página pública não deve exigir login para ser visualizada.
+
+O link público pode ser algo como:
+
+/sgs-barber/{slug-da-barbearia}
+
+Se houver apenas uma barbearia, index.html pode ser a página principal.
+
+============================================================
+10. DASHBOARD "HOJE"
+============================================================
+
+O dashboard possui:
+- quantidade de atendimentos;
+- faturamento do dia;
+- concluídos;
+- aguardando;
+- cancelados;
+- próximo atendimento.
+
+Endpoint recomendado:
+
+GET /api/dashboard/today?date=2026-10-01
+
+Resposta sugerida:
+
+{
+  "totalAppointments": 12,
+  "revenue": 540,
+  "completed": 8,
+  "waiting": 2,
+  "cancelled": 1,
+  "noShow": 1,
+  "nextAppointment": {
+    "id": 123,
+    "time": "15:30",
+    "client": "João Silva",
+    "service": "Corte + Barba",
+    "barber": "Daniel",
+    "duration": 50
+  }
+}
+
+O backend deve respeitar o usuário logado e as permissões.
+
+============================================================
+11. COMANDA E FECHAMENTO
+============================================================
+
+O front possui uma tela de fechamento.
+
+Fluxo:
+- selecionar atendimento aberto;
+- aplicar desconto;
+- escolher forma de pagamento;
+- registrar observação;
+- finalizar atendimento.
+
+Endpoint recomendado:
+
+POST /api/appointments/{id}/checkout
+
+Body:
+{
+  "discount": 0,
+  "paymentMethod": "PIX",
+  "note": ""
+}
+
+O backend deve calcular o total final.
+
+Fórmula:
+finalTotal = servicePrice + extrasTotal - discount
+
+Nunca confiar no finalTotal enviado pelo navegador.
+
+Ao concluir:
+- status = Concluído
+- completed_at = agora
+- registrar pagamento
+- atualizar estoque dos produtos vendidos
+- calcular comissão conforme regra cadastrada
+- gerar notificação
+
+Idealmente tudo isso deve ocorrer em uma transação de banco.
+
+============================================================
+12. PRODUTOS E ESTOQUE
+============================================================
+
+Produtos adicionados à comanda devem gerar registros em appointment_products.
+
+POST /api/appointments/{id}/products
+
+Body:
+{
+  "productId": 101,
+  "quantity": 1
+}
+
+O backend deve:
+- conferir estoque;
+- impedir estoque negativo;
+- registrar preço praticado no momento da venda;
+- diminuir estoque;
+- incluir o produto no total.
+
+Não usar somente o preço atual do produto para reconstruir vendas antigas.
+
+============================================================
+13. CLIENTES PARA REATIVAÇÃO
+============================================================
+
+O front possui a tela "Clientes para reativar".
+
+O cálculo atual considera clientes com 30 dias ou mais desde o último
+atendimento concluído.
+
+No backend é melhor criar:
+
+GET /api/clients/reactivation?days=30
+
+Resposta:
+[
+  {
+    "id": 10,
+    "name": "Lucas Andrade",
+    "phone": "81999999999",
+    "lastVisit": "2026-07-20",
+    "daysInactive": 72
+  }
+]
+
+O backend/IA/WhatsApp poderá futuramente montar e enviar a mensagem.
+
+O front atualmente apenas abre o WhatsApp com uma mensagem preparada.
+
+============================================================
+14. HORÁRIOS, FOLGAS, FÉRIAS E INTERVALOS
+============================================================
+
+Cada barbeiro pode ter sua própria escala.
+
+Exemplo:
+
+Daniel
+Segunda: 08:00–18:00
+Almoço: 12:00–13:00
+Buffer: 10 minutos
+
+Terça: 08:00–18:00
+Quarta: FOLGA
+
+Endpoint:
+
+GET  /api/barbers/{id}/schedule
+POST /api/barberSchedules
+POST /api/barberTimeOff
+DELETE /api/barberTimeOff/{id}
+PUT  /api/barberSchedules/{id}
+DELETE /api/barberSchedules/{id}
+
+Para férias ou folgas excepcionais, pode ser melhor usar uma tabela
+barber_time_off:
+
+- id
+- barber_id
+- start_date
+- end_date
+- reason
+
+============================================================
+15. BUFFER ENTRE ATENDIMENTOS
+============================================================
+
+Exemplo:
+
+Serviço: 30 minutos
+Buffer: 10 minutos
+
+Reserva às 14:00:
+14:00 → 14:30 atendimento
+14:30 → 14:40 preparação
+
+Próximo horário permitido: 14:40 ou o próximo slot da grade.
+
+O backend deve aplicar o buffer na verificação de conflito.
+
+É recomendado armazenar start_time e end_time efetivos no appointment.
+
+============================================================
+16. LISTA DE ESPERA
+============================================================
+
+Endpoint:
+
+POST /api/waitlist
+GET  /api/waitlist
+DELETE /api/waitlist/{id}
+
+Quando um horário ficar livre:
+- backend identifica pessoas compatíveis;
+- cria uma notificação;
+- futuramente pode enviar WhatsApp;
+- a vaga não deve ser considerada reservada só por estar na lista.
+
+============================================================
+17. CENTRAL DE NOTIFICAÇÕES
+============================================================
+
+Eventos sugeridos:
+- novo agendamento;
+- cancelamento;
+- reagendamento;
+- atendimento concluído;
+- cliente entrou na espera;
+- vaga liberada;
+- aniversário;
+- estoque baixo;
+- avaliação recebida.
+
+Endpoint:
+
+GET /api/notifications
+PATCH /api/notifications/{id}/read
+POST /api/notifications/read-all
+
+O front mostra notificações não lidas e permite marcar como lidas.
+
+============================================================
+18. WHATSAPP
+============================================================
+
+O front atual NÃO faz WhatsApp automático.
+
+Ele apenas abre o WhatsApp com texto pré-preenchido.
+
+Para automação real, o BACKEND deve integrar um provedor oficial/adequado
+de WhatsApp Business e manter as credenciais no servidor.
+
+Exemplos de eventos futuros:
+- confirmação de agendamento;
+- lembrete 24h antes;
+- lembrete 1h antes;
+- cancelamento;
+- vaga da lista de espera;
+- aniversário;
+- reativação.
+
+Nunca colocar token do WhatsApp no JavaScript do navegador.
+
+============================================================
+19. IA — RESPONSABILIDADE DO DESENVOLVEDOR DE IA/BACKEND
+============================================================
+
+A aba IA do front é SOMENTE um placeholder.
+
+A IA deve ser conectada pelo BACKEND.
+
+Arquitetura:
+
+Frontend
+   |
+   | POST /api/ai/chat
+   v
+Backend
+   |
+   | chave secreta
+   v
+Provedor de IA
+
+Nunca:
+
+Frontend -> API da IA usando chave secreta
+
+Endpoint sugerido:
+
+POST /api/ai/chat
+
+Body:
+{
+  "message": "Crie uma mensagem de retorno para um cliente que não vem há 60 dias",
+  "context": {
+    "clientId": 10,
+    "purpose": "reactivation"
+  }
+}
+
+Resposta:
+{
+  "message": "Olá, Lucas...",
+  "provider": "..."
+}
+
+O backend deve:
+- validar usuário;
+- limitar uso;
+- proteger chave da IA;
+- registrar logs quando necessário;
+- filtrar dados sensíveis;
+- impedir que o cliente acesse informações de outros clientes;
+- controlar custos/tokens;
+- tratar erros e timeout.
+
+============================================================
+20. IA — FUNÇÕES FUTURAS SUGERIDAS
+============================================================
+
+A IA poderá ajudar em:
+
+1. Mensagem de confirmação
+2. Mensagem de lembrete
+3. Mensagem de reativação
+4. Mensagem de aniversário
+5. Resumo de feedbacks
+6. Sugestões de campanhas
+7. Resumo diário para o dono
+8. Perguntas sobre dados autorizados do dashboard
+
+Exemplo:
+
+POST /api/ai/retention-message
+POST /api/ai/birthday-message
+POST /api/ai/daily-summary
+POST /api/ai/chat
+
+A IA NÃO deve decidir sozinha:
+- preço;
+- comissão;
+- disponibilidade;
+- cancelamento;
+- pagamento;
+- permissão de usuário.
+
+Essas regras pertencem ao backend.
+
+============================================================
+21. RELATÓRIOS
+============================================================
+
+O front atual calcula relatórios localmente quando está em modo demonstração.
+Na API real, recomenda-se endpoints específicos.
+
+GET /api/reports?period=week&date=2026-10-01
+GET /api/reports?period=month&date=2026-10-01
+
+Retorno sugerido:
+
+{
+  "hours": 32.5,
+  "clients": 28,
+  "money": 1960,
+  "ticketAverage": 70,
+  "averageHoursPerClient": 1.16,
+  "commission": 980,
+  "buckets": []
+}
+
+O backend deve ser a fonte oficial dos relatórios depois da integração.
+
+============================================================
+22. CORS E AMBIENTE
+============================================================
+
+Durante desenvolvimento:
+- permitir apenas a origem do front definida pela equipe;
+- não usar CORS aberto para produção.
+
+Exemplo de configuração do front:
+
+config.js
+
+USE_API: true
+API_BASE_URL: "https://api.seudominio.com"
+
+Em desenvolvimento:
+
+API_BASE_URL: "http://localhost:3000"
+
+O backend deve aceitar JSON e responder corretamente com HTTP status.
+
+200 = consulta/alteração realizada
+201 = criação realizada
+204 = exclusão sem conteúdo
+400 = dados inválidos
+401 = não autenticado
+403 = sem permissão
+404 = não encontrado
+409 = conflito, principalmente horário ocupado
+422 = regra de validação
+500 = erro interno
+
+============================================================
+23. ERROS IMPORTANTES QUE O BACKEND DEVE TRATAR
+============================================================
+
+Conflito de horário:
+HTTP 409
+
+Exemplo:
+{
+  "error": "APPOINTMENT_CONFLICT",
+  "message": "Este horário acabou de ser reservado."
+}
+
+O front deve mostrar uma mensagem e atualizar a disponibilidade.
+
+Barbeiro inativo:
+Não permitir nova reserva.
+
+Serviço inativo:
+Não permitir nova reserva.
+
+Serviço não vinculado ao barbeiro:
+Não permitir nova reserva.
+
+Data de folga:
+Não permitir reserva.
+
+Fora do expediente:
+Não permitir reserva.
+
+Buffer incompatível:
+Não permitir reserva.
+
+Cliente tentando avaliar atendimento de outra pessoa:
+HTTP 403.
+
+============================================================
+24. ORDEM RECOMENDADA PARA IMPLEMENTAÇÃO
+============================================================
+
+ETAPA 1 — BANCO
+- criar tabelas;
+- relacionamentos;
+- índices;
+- constraints;
+- hash de senha.
+
+ETAPA 2 — AUTENTICAÇÃO
+- login;
+- cadastro;
+- sessão/token;
+- roles;
+- autorização.
+
+ETAPA 3 — CADASTROS
+- barbeiros;
+- serviços;
+- clientes;
+- produtos;
+- escalas.
+
+ETAPA 4 — AGENDAMENTO
+- disponibilidade;
+- criação;
+- cancelamento;
+- reagendamento;
+- bloqueios;
+- lista de espera.
+
+ETAPA 5 — OPERAÇÃO
+- status;
+- comanda;
+- fechamento;
+- pagamento;
+- estoque;
+- comissão.
+
+ETAPA 6 — CRM
+- histórico;
+- aniversários;
+- favorito;
+- preferências;
+- reativação.
+
+ETAPA 7 — NOTIFICAÇÕES
+- central;
+- WhatsApp;
+- e-mail, se necessário.
+
+ETAPA 8 — AVALIAÇÕES
+- criação;
+- média;
+- moderação, se necessária.
+
+ETAPA 9 — IA
+- endpoint;
+- provedor;
+- segurança;
+- limites;
+- prompts;
+- logs.
+
+ETAPA 10 — PRODUÇÃO
+- HTTPS;
+- CORS correto;
+- backup;
+- logs;
+- monitoramento;
+- rate limit;
+- proteção de dados;
+- testes.
+
+============================================================
+25. TESTE DE INTEGRAÇÃO FINAL
+============================================================
+
+Testar exatamente nesta ordem:
+
+1. Criar conta de cliente.
+2. Fazer login.
+3. Criar barbeiro.
+4. Criar serviço.
+5. Vincular serviço ao barbeiro.
+6. Definir horário do barbeiro.
+7. Definir intervalo.
+8. Definir buffer.
+9. Abrir página pública.
+10. Escolher barbeiro.
+11. Abrir perfil.
+12. Favoritar barbeiro.
+13. Escolher serviço.
+14. Escolher data.
+15. Conferir horários.
+16. Criar agendamento.
+17. Tentar criar outro no mesmo horário.
+18. Backend deve retornar 409.
+19. Cancelar um agendamento.
+20. Conferir disponibilidade novamente.
+21. Fazer atendimento.
+22. Adicionar produto.
+23. Fechar comanda.
+24. Confirmar estoque atualizado.
+25. Confirmar comissão.
+26. Confirmar notificação.
+27. Cliente avaliar.
+28. Confirmar avaliação no perfil do barbeiro.
+29. Testar cliente sem retorno por 30+ dias.
+30. Abrir WhatsApp de reativação.
+31. Testar lista de espera.
+32. Testar folga.
+33. Testar férias.
+34. Testar intervalo.
+35. Testar buffer.
+36. Testar permissões de admin/barbeiro/cliente.
+37. Testar IA somente através do backend.
+
+============================================================
+26. REGRA FINAL DE RESPONSABILIDADE
+============================================================
+
+FRONT-END:
+- interface;
+- formulários;
+- navegação;
+- validação visual;
+- experiência do usuário;
+- exibição dos dados;
+- fallback localStorage;
+- integração através de Store.
+
+BACKEND:
+- autenticação;
+- autorização;
+- regras de negócio;
+- disponibilidade real;
+- conflitos;
+- cálculos oficiais;
+- pagamentos;
+- WhatsApp automático;
+- notificações;
+- relatórios oficiais;
+- conexão com banco;
+- conexão segura com IA.
+
+BANCO:
+- persistência;
+- relacionamentos;
+- integridade;
+- índices;
+- histórico.
+
+IA:
+- geração/análise de texto e outros recursos aprovados;
+- sempre acessada pelo backend;
+- nunca deve substituir as regras oficiais do sistema.
+
+============================================================
+27. PONTO DE INTEGRAÇÃO DO FRONT
+============================================================
+
+Arquivo:
+api.js
+
+O front já possui:
+
+Store.list(resource)
+Store.get(resource, id)
+Store.create(resource, data)
+Store.update(resource, id, data)
+Store.remove(resource, id)
+Store.login(role, credentials)
+Store.register(role, data)
+Store.dashboard()
+
+A equipe deve preferir adicionar novos métodos ao Store quando um endpoint
+especializado for necessário, em vez de espalhar fetch() pelo HTML.
+
+Isso mantém o front desacoplado do backend.
+
+============================================================
+FIM
+============================================================
+
+Resumo:
+O front está pronto para funcionar sozinho em demonstração e para receber
+backend posteriormente. Não substituam a camada Store por chamadas espalhadas
+pelas páginas. Implementem o banco, depois a API, depois os serviços de
+WhatsApp/IA, e por último ativem USE_API=true.

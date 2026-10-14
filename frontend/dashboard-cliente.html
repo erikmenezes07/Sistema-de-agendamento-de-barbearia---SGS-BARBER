@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SGS Barber | Agendamento</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body id="clientPortal" class="client-page">
+<header class="client-topbar">
+  <a class="client-logo" href="#top"><span class="brand-mark"><i class="fa-solid fa-scissors"></i></span><span><strong>SGS BARBER</strong><small>Agendamento online</small></span></a>
+  <nav class="client-links"><a href="#barbers">Barbeiros</a><a href="#services">Serviços</a><a href="#booking">Agendar</a><a href="#history">Meus horários</a></nav>
+  <div class="client-actions"><button class="theme" onclick="toggleTheme()" title="Tema"><i class="fa-solid fa-moon"></i></button><a class="client-user" href="login-cliente.html" onclick="sessionStorage.clear()"><i class="fa-solid fa-right-from-bracket"></i><span>Sair</span></a></div>
+</header>
+<main id="top" class="client-main">
+<section class="client-hero">
+  <div class="hero-copy"><span class="eyebrow">AGENDAMENTO ONLINE</span><h1>Escolha quem vai cuidar do seu visual.</h1><p>Selecione o barbeiro, escolha o serviço e encontre um horário disponível. Tudo em poucos passos.</p><a href="#barbers" class="btn btn-primary hero-cta">Escolher barbeiro</a></div>
+  <div class="hero-visual"><div class="visual-card"><span class="visual-badge">AGENDA ONLINE</span><div class="scissors-big"><i class="fa-solid fa-scissors"></i></div><strong>Seu horário, do seu jeito.</strong><small>Disponibilidade atualizada para cada profissional.</small></div></div>
+</section>
+<section id="barbers" class="client-section">
+  <div class="section-intro"><div><span class="eyebrow">01 · PROFISSIONAL</span><h2>Escolha seu barbeiro</h2><p>Veja os profissionais disponíveis antes de escolher o serviço.</p></div><span class="section-count" id="barberCount">Profissionais disponíveis</span></div>
+  <div id="clientBarbers" class="client-barber-grid"></div>
+</section>
+<section class="client-section favorite-section"><div class="section-intro"><div><span class="eyebrow">MEU PROFISSIONAL</span><h2>Meu barbeiro preferido</h2><p>Salve seu profissional favorito para facilitar os próximos agendamentos.</p></div></div><div id="favoriteBarberBox"></div></section>
+<section id="services" class="client-section service-selection-section">
+  <div class="section-intro"><div><span class="eyebrow">02 · SERVIÇO</span><h2>Escolha o atendimento</h2><p>Os serviços exibidos são os disponíveis para o barbeiro selecionado.</p></div></div>
+  <div id="clientServices" class="client-service-grid"></div>
+</section>
+<section id="booking" class="booking-section">
+  <div class="booking-header"><div><span class="eyebrow">03 · HORÁRIO</span><h2>Finalize seu agendamento</h2></div><div class="booking-progress"><span class="active">1</span><i></i><span>2</span><i></i><span>3</span><i></i><span>4</span></div></div>
+  <div class="booking-layout">
+    <div class="booking-card main-booking">
+      <div class="selection-strip"><div><small>Barbeiro</small><strong id="selectedBarberName">Selecione um barbeiro</strong></div><div><small>Serviço</small><strong id="selectedServiceName">Selecione um serviço</strong></div></div>
+      <form id="bookingForm">
+        <div class="booking-step"><span>04</span><div><strong>Seus dados</strong><small>Use os dados que a barbearia deve ter para confirmar o atendimento.</small></div></div>
+        <div class="form-grid booking-fields"><div class="field"><label>Seu nome</label><input id="clientName" required placeholder="Nome completo"></div><div class="field"><label>WhatsApp</label><input id="clientPhone" required inputmode="tel" placeholder="(81) 99999-9999"></div><div class="field"><label>Data</label><input id="bookingDate" type="date" required></div></div>
+        <div class="booking-step second"><span>05</span><div><strong>Preferências</strong><small>Opcional.</small></div></div>
+        <div id="preferences" class="preference-grid"><button type="button" class="pref" data-pref="Silêncio">Silêncio</button><button type="button" class="pref" data-pref="Aceita Café">Café / água</button><button type="button" class="pref" data-pref="Bate-Papo">Gosto de conversar</button><button type="button" class="pref" data-pref="Corte na Tesoura">Tesoura</button></div>
+        <div class="booking-step second"><span>06</span><div><strong>Horário</strong><small>Somente horários disponíveis para o barbeiro escolhido.</small></div></div>
+        <div class="selected-time"><span>Horário escolhido</span><strong id="selectedTime">—</strong></div>
+        <div class="slot-helper"><i class="fa-solid fa-circle-info"></i><span>Os horários ocupados ficam indisponíveis. A disponibilidade real deverá ser validada novamente pelo backend no momento da reserva.</span></div><div id="slots" class="client-slots"></div>
+        <button class="btn btn-primary booking-submit" type="submit">Confirmar agendamento</button>
+        <div id="bookingActions" class="booking-actions" hidden>
+          <div class="booking-success"><i class="fa-solid fa-circle-check"></i><div><strong>Agendamento confirmado</strong><span>Agora você pode salvar o horário ou enviar um lembrete pelo WhatsApp.</span></div></div>
+          <div class="booking-action-buttons">
+            <button type="button" class="btn btn-secondary" id="addCalendarBtn"><i class="fa-regular fa-calendar-plus"></i> Adicionar ao calendário</button>
+            <button type="button" class="btn btn-primary" id="whatsappBtn"><i class="fa-brands fa-whatsapp"></i> Lembrar pelo WhatsApp</button>
+          </div>
+        </div>
+      </form>
+    </div>
+    <aside class="booking-summary"><div class="summary-top"><span class="eyebrow">RESUMO</span><i class="fa-regular fa-calendar-check"></i></div><h3>Seu atendimento</h3><div class="summary-service"><span class="summary-icon"><i class="fa-solid fa-user"></i></span><div><strong id="summaryService">Escolha um serviço</strong><small id="summaryDuration">—</small></div><b id="summaryPrice">R$ 0,00</b></div><div class="summary-divider"></div><div class="summary-row"><span>Barbeiro</span><strong id="summaryBarber">Selecione</strong></div><div class="summary-row"><span>Data</span><strong id="summaryDate">Selecione</strong></div><div class="summary-row"><span>Horário</span><strong id="summarySlot">—</strong></div><div class="summary-note"><i class="fa-solid fa-circle-info"></i><span>Para alterar ou cancelar, fale com a barbearia.</span></div></aside>
+  </div>
+</section>
+<section id="history" class="client-section history-section"><div class="section-intro"><div><span class="eyebrow">SEUS ATENDIMENTOS</span><h2>Meus horários</h2><p>Confira reservas anteriores e agende novamente com poucos cliques.</p></div></div><div id="clientHistory" class="history-list"></div></section><section class="client-section preference-profile"><div class="section-intro"><div><span class="eyebrow">MEU PERFIL</span><h2>Preferências</h2><p>Essas informações ajudam o profissional a preparar o atendimento.</p></div></div><div class="card preference-profile-card"><div class="preference-profile-copy"><i class="fa-solid fa-sliders"></i><div><strong>Seu estilo de atendimento</strong><p>As preferências escolhidas no agendamento ficam associadas à reserva. O backend poderá manter preferências permanentes do cliente no futuro.</p></div></div><span class="badge badge-info">Preparado para API</span></div></section>
+</main>
+<footer class="client-footer"><strong>SGS BARBER</strong><span>Agendamento simples para clientes e profissionais.</span><a href="login-barbeiro.html">Área do barbeiro</a></footer>
+<div id="toast"></div><script src="config.js"></script><script src="api.js"></script><script src="app.js"></script>
+</body></html>

@@ -1,0 +1,1 @@
+package com.sgsbarber.repository; import com.sgsbarber.model.BusinessProfileModel; import org.springframework.data.jpa.repository.JpaRepository; public interface BusinessProfileRepository extends JpaRepository<BusinessProfileModel,Long>{}
