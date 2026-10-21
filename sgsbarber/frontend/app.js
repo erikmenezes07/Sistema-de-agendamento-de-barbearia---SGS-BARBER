@@ -32,14 +32,18 @@ async function initLogin() {
   }));
   if (clientForm) clientForm.addEventListener("submit", async e => {
     e.preventDefault();
-    const result = await Store.login("client", { identifier: $("#phone").value.trim(), password: $("#password").value });
+    let result;
+    try { result = await Store.login("client", { identifier: $("#phone").value.trim(), password: $("#password").value }); }
+    catch (error) { return toast(error.message || "Não foi possível conectar ao servidor."); }
     if (!result.ok) return toast(result.message || "Não foi possível entrar.");
     sessionStorage.setItem("sgs_role", "client"); sessionStorage.setItem("sgs_user", JSON.stringify(result.user));
     location.href = "dashboard-cliente.html";
   });
   if (barberForm) barberForm.addEventListener("submit", async e => {
     e.preventDefault();
-    const result = await Store.login("barber", { identifier: $("#cpf").value.trim(), password: $("#password").value });
+    let result;
+    try { result = await Store.login("barber", { identifier: $("#cpf").value.trim(), password: $("#password").value }); }
+    catch (error) { return toast(error.message || "Não foi possível conectar ao servidor."); }
     if (!result.ok) return toast(result.message || "Não foi possível entrar.");
     sessionStorage.setItem("sgs_role", "barber"); sessionStorage.setItem("sgs_user", JSON.stringify(result.user));
     location.href = "dashboard-barbeiro.html";

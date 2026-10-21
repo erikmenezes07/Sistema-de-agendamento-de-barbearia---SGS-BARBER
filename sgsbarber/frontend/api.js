@@ -78,7 +78,9 @@ const Store = (() => {
       ...options
     });
     if (!response.ok) {
-      const message = await response.text();
+      const raw = await response.text();
+      let message = raw;
+      try { message = JSON.parse(raw).message || raw; } catch (_) { /* resposta pode ser texto puro */ }
       throw new Error(message || `Erro HTTP ${response.status}`);
     }
     if (response.status === 204) return null;
