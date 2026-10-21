@@ -112,7 +112,7 @@ http://localhost:8080
 Em outro terminal:
 
 ```powershell
-cd frontend
+cd sgsbarber\frontend
 node server.js
 ```
 
@@ -123,6 +123,17 @@ http://localhost:5500
 ```
 
 O frontend usa a API do backend na porta `8080`. O servidor frontend escuta em `0.0.0.0`, permitindo acesso por outros dispositivos da mesma rede.
+
+## Executar os testes sem Supabase
+
+Os testes automatizados usam H2 em memória e não precisam de conta, senha ou conexão com o Supabase. A configuração fica em `sgsbarber/src/test/resources/application.properties` e é aplicada automaticamente pelo Maven durante os testes.
+
+```powershell
+cd sgsbarber
+.\mvnw.cmd test
+```
+
+Esse modo valida o carregamento do contexto Spring e os testes do backend, mas não inicia o frontend e não substitui o banco PostgreSQL usado na execução normal da aplicação.
 
 ## Acesso em celular ou outro computador
 
@@ -147,4 +158,4 @@ O frontend usa a API do backend na porta `8080`. O servidor frontend escuta em `
 
 ## Status do projeto
 
-O frontend possui integração preparada com a API REST. Algumas integrações externas, como IA, pagamento, WhatsApp e calendário, dependem de implementação adicional conforme os contratos documentados em [frontend/TUTORIAL-INTEGRACAO-BACKEND-E-IA.txt](frontend/TUTORIAL-INTEGRACAO-BACKEND-E-IA.txt).
+O frontend possui integração preparada com a API REST. Algumas integrações externas, como IA, pagamento, WhatsApp e calendário, dependem de implementação adicional conforme os contratos documentados em [sgsbarber/frontend/TUTORIAL-INTEGRACAO-BACKEND-E-IA.txt](sgsbarber/frontend/TUTORIAL-INTEGRACAO-BACKEND-E-IA.txt).
