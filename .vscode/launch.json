@@ -3,16 +3,20 @@
   "configurations": [
     {
       "type": "java",
-      "name": "SGS Barber - Supabase",
+      "name": "SGS BARBEARIA - SUPABASE",
       "request": "launch",
       "mainClass": "com.sgsbarber.SgsbarberApplication",
       "projectName": "sgsbarber",
       "env": {
-        "SUPABASE_DB_URL": "jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require",
-        "SUPABASE_DB_USERNAME": "postgres.lffromprwnygrbzamook",
-        "SUPABASE_DB_PASSWORD": "${input:supabaseDbPassword}",
-        "SUPABASE_DB_SSLMODE": "require"
+        "SUPABASE_DB_PASSWORD": "${input:supabaseDbPassword}"
       }
+    },
+    {
+      "type": "pwa-chrome",
+      "name": "SGS Barber - Frontend",
+      "request": "launch",
+      "url": "http://localhost:5500",
+      "webRoot": "${workspaceFolder}/frontend"
     }
   ],
   "inputs": [
