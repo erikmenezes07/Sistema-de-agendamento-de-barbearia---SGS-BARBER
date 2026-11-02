@@ -51,7 +51,6 @@ async function initLogin() {
   if (clientRegister) clientRegister.addEventListener("submit", async e => {
     e.preventDefault();
     const data = { name: $("#registerClientName").value.trim(), phone: $("#registerClientPhone").value.trim(), email: $("#registerClientEmail").value.trim(), cpf: $("#registerClientCpf").value.replace(/\D/g,""), birthDate: $("#registerClientBirthDate").value, password: $("#registerClientPassword").value };
-    const result = await Store.register("client", data);
     let result;
     try { result = await Store.register("client", data); }
     catch (error) { return toast(error.message || "Não foi possível conectar ao servidor."); }
@@ -62,7 +61,9 @@ async function initLogin() {
   if (barberRegister) barberRegister.addEventListener("submit", async e => {
     e.preventDefault();
     const data = { name: $("#registerBarberName").value.trim(), email: $("#registerBarberEmail").value.trim(), phone: $("#registerBarberPhone").value.trim(), cpf: $("#registerBarberCpf").value.replace(/\D/g,""), password: $("#registerBarberPassword").value };
-    const result = await Store.register("barber", data);
+    let result;
+    try { result = await Store.register("barber", data); }
+    catch (error) { return toast(error.message || "Não foi possível conectar ao servidor."); }
     if (!result.ok) return toast(result.message || "Não foi possível criar a conta.");
     sessionStorage.setItem("sgs_role", "barber"); sessionStorage.setItem("sgs_user", JSON.stringify(result.user));
     location.href = "dashboard-barbeiro.html";
@@ -257,7 +258,18 @@ async function createProduct(e){e.preventDefault();await Store.create("products"
 async function removeProduct(id){await Store.update("products",id,{active:false});toast("Produto desativado.");await renderProducts();await renderBarber();}
 async function renderProducts(){const rows=await Store.list("products");$("#productsTable").innerHTML=rows.map(p=>`<tr><td>${p.name}</td><td>${money(p.price)}</td><td>${p.stock}</td><td>${p.active!==false?`<button class="btn btn-danger" onclick="removeProduct(${p.id})">Desativar</button>`:`<span class="badge danger">Inativo</span>`}</td></tr>`).join("")}
 async function createBarber(e){e.preventDefault();const data={name:$("#barberName").value.trim(),phone:$("#barberPhone").value.trim(),email:$("#barberEmail").value.trim().toLowerCase(),commission:Number($("#barberCommission").value||50),active:true,serviceIds:[]};if(!data.name)return;await Store.create("barbers",data);toast("Barbeiro cadastrado.");e.target.reset();$("#barberCommission").value=50;await renderBarbers();}
-async function toggleBarber(id,active){await Store.update("barbers",id,{active});toast(active?"Barbeiro ativado.":"Barbeiro desativado.");await renderBarbers();}
+async function toggleBarber(id,active){
+  try{
+    const barber=await Store.get("barbers",id);
+    if(!barber)throw new Error("Barbeiro não encontrado.");
+    await Store.update("barbers",id,{...barber,active});
+    toast(active?"Barbeiro ativado.":"Barbeiro desativado.");
+    await renderBarbers();
+    await renderAgendaFilters();
+  }catch(error){
+    toast(error.message||"Não foi possível atualizar o status do barbeiro.");
+  }
+}
 async function renderBarbers(){const rows=await Store.list("barbers");$("#barbersTable").innerHTML=rows.map(b=>`<tr><td><strong>${b.name}</strong></td><td>${b.phone||"-"}<br><small>${b.email||"-"}</small></td><td>${Number(b.commission||0)}%</td><td><span class="badge ${b.active!==false?"success":"danger"}">${b.active!==false?"Ativo":"Inativo"}</span></td><td><button class="btn ${b.active!==false?"btn-danger":"btn-primary"}" onclick="toggleBarber(${b.id},${b.active===false})">${b.active!==false?"Desativar":"Ativar"}</button></td></tr>`).join("")||`<tr><td colspan="5" class="empty">Nenhum barbeiro cadastrado.</td></tr>`;}
 async function renderClients(){const [clients,apps]=await Promise.all([Store.list("clients"),Store.list("appointments")]);$("#clientsTable").innerHTML=clients.map(c=>{const mine=apps.filter(a=>a.clientId===c.id||a.client===c.name);const completed=mine.filter(a=>a.status==="Concluído");const last=completed.sort((a,b)=>b.date.localeCompare(a.date)||b.time.localeCompare(a.time))[0];return `<tr><td><strong>${c.name}</strong></td><td>${c.phone||"-"}</td><td>${c.birthDate?fmtDate(c.birthDate):"-"}</td><td>${completed.length}</td><td>${last?fmtDate(last.date):"-"}</td></tr>`}).join("")||`<tr><td colspan="5" class="empty">Nenhum cliente.</td></tr>`}
 async function renderFullAgenda(){const apps=await Store.list("appointments"),date=$("#fullAgendaDate")?.value;const rows=apps.filter(a=>!date||a.date===date).sort((a,b)=>a.time.localeCompare(b.time));$("#fullAgenda").innerHTML=rows.map(a=>`<tr><td>${fmtDate(a.date)}</td><td>${a.time}</td><td>${a.client}</td><td>${a.service}</td><td><span class="badge ${statusClass(a.status)}">${a.status}</span></td><td>${money(Number(a.price)+Number(a.extras||0))}</td></tr>`).join("")||`<tr><td colspan="6" class="empty">Nenhum agendamento.</td></tr>`}
