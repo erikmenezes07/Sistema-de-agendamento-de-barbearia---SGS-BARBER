@@ -73,6 +73,7 @@ async function initLogin() {
 let clientState = { barber:null, service:null, slot:null, prefs:new Set() };
 let reportPeriod = "week";
 const reportCharts = {};
+let pendingCheckoutId = null;
 
 async function initClient() {
   const [barbers, services, appointments] = await Promise.all([Store.list("barbers"), Store.list("services"), Store.list("appointments")]);
@@ -242,11 +243,18 @@ async function renderBarber() {
   $("#comandaProduct").innerHTML=products.filter(p=>p.active!==false&&p.stock>0).map(p=>`<option value="${p.id}">${p.name} — ${money(p.price)}</option>`).join("");
 }
 function buildAgendaRows(apps, blocks=[]) {
-  const rows=apps.map(a=>`<tr><td><strong>${a.time}</strong></td><td>${a.client}<br><small>${(a.prefs||[]).join(" · ")}</small></td><td>${a.service}</td><td>${money(Number(a.price)+Number(a.extras||0))}</td><td><span class="badge ${statusClass(a.status)}">${a.status}</span></td><td><button class="btn btn-info" onclick="setStatus(${a.id},'Na Cadeira')">Cadeira</button> <button class="btn btn-primary" onclick="setStatus(${a.id},'Concluído')">Concluir</button> <button class="btn btn-danger" onclick="setStatus(${a.id},'No-Show')">Faltou</button></td></tr>`);
+  const rows=apps.map(a=>`<tr><td><strong>${a.time}</strong></td><td>${a.client}<br><small>${(a.prefs||[]).join(" · ")}</small></td><td>${a.service}</td><td>${money(Number(a.price)+Number(a.extras||0))}</td><td><span class="badge ${statusClass(a.status)}">${a.status}</span></td><td><button class="btn btn-info" onclick="setStatus(${a.id},'Na Cadeira')">Cadeira</button> <button class="btn btn-primary" onclick="openCheckout(${a.id})">Fechar e cobrar</button> <button class="btn btn-danger" onclick="setStatus(${a.id},'No-Show')">Não compareceu</button></td></tr>`);
   const blocked=blocks.map(b=>`<tr><td>${b.time}</td><td colspan="4" style="color:var(--danger)">Bloqueado — ${b.reason||"Indisponível"}</td><td><button class="btn btn-danger" onclick="removeBlock(${b.id})">Remover</button></td></tr>`);
   return [...rows,...blocked].join("") || `<tr><td colspan="6" class="empty">Nenhum registro para esta data.</td></tr>`;
 }
-async function setStatus(id,status){await Store.update("appointments",id,{status});toast("Status atualizado.");await renderBarber();await renderFullAgenda();await renderClients();}
+async function setStatus(id,status){
+  if(status==="Concluído")return openCheckout(id);
+  try{
+    await Store.update("appointments",id,{status});
+    toast(status==="No-Show"?"Atendimento marcado como não compareceu.":"Status atualizado.");
+    await renderBarber();await renderFullAgenda();await renderClients();await renderTodayOperational();
+  }catch(error){toast(error.message||"Não foi possível atualizar o atendimento.");}
+}
 async function createQuickAppointment(e){e.preventDefault();const s=await Store.get("services",$("#quickService").value);const current=JSON.parse(sessionStorage.getItem("sgs_user")||"null"); const profile=(await Store.list("barbers")).find(b=>String(b.id)===String(current?.barberId)); await Store.create("appointments",{clientId:null,client:$("#quickName").value.trim(),barberId:profile?.id||null,barber:profile?.name||current?.name||"",serviceId:s.id,service:s.name,price:s.price,extras:0,date:$("#agendaDate").value,time:$("#quickTime").value,status:"Na Cadeira",prefs:["Cliente de Balcão"]});toast("Encaixe adicionado.");e.target.reset();hidePanels();await renderBarber();await renderFullAgenda();}
 async function createBlock(e){e.preventDefault();await Store.create("blocks",{date:$("#blockDate").value,time:$("#blockTime").value,reason:$("#blockReason").value.trim()||"Pausa / Intervalo"});toast("Horário bloqueado.");e.target.reset();hidePanels();await renderBarber();}
 async function removeBlock(id){await Store.remove("blocks",id);toast("Bloqueio removido.");await renderBarber();}
@@ -297,7 +305,7 @@ function reportDataForPeriod(appointments, services) {
     const service = serviceMap.get(String(a.serviceId));
     acc.hours += Number(service?.duration || a.duration || 0) / 60;
     acc.clients += 1;
-    acc.money += Number(a.price || 0) + Number(a.extras || 0);
+    acc.money += appointmentRevenue(a);
     return acc;
   }, {hours:0, clients:0, money:0});
 
@@ -326,6 +334,11 @@ function reportDataForPeriod(appointments, services) {
   }
   const monthRows = completed.filter(a => a.date >= isoDate(first) && a.date <= isoDate(last));
   return {buckets, metrics:getMetrics(monthRows)};
+}
+function appointmentRevenue(appointment) {
+  const recordedTotal = Number(appointment.finalTotal);
+  if (Number.isFinite(recordedTotal) && recordedTotal > 0) return recordedTotal;
+  return Math.max(0, Number(appointment.price || 0) + Number(appointment.extras || 0) - Number(appointment.discount || 0));
 }
 function renderChart(id, type, labels, data, label, prefix="", integer=false) {
   if (typeof Chart === "undefined") return;
@@ -419,12 +432,12 @@ async function renderAgendaFilters(){
   if(wait) wait.innerHTML='<option value="">Qualquer barbeiro</option>'+barbers.filter(b=>b.active!==false).map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join("");
 }
 function appointmentStatusOptions(a){
-  const statuses=["Agendado","Confirmado","Na Cadeira","Concluído","Cancelado","No-Show"];
+  const statuses=["Agendado","Confirmado","Na Cadeira","Cancelado","No-Show"];
   return statuses.map(s=>`<button type="button" class="status-menu-item ${a.status===s?"active":""}" onclick="setStatus(${a.id},'${s}')">${s}</button>`).join("");
 }
 function appointmentCard(a){
   const total=Number(a.price||0)+Number(a.extras||0);
-  return `<article class="agenda-appointment"><div class="agenda-time">${esc(a.time)}<small>${Number(a.duration||30)} min</small></div><div class="agenda-client"><div class="person-avatar">${initials(a.client)}</div><div><strong>${esc(a.client)}</strong><small>${esc(a.service)}</small></div></div><div class="agenda-professional"><span>Barbeiro</span><strong>${esc(a.barber||"-")}</strong></div><div class="agenda-price">${money(total)}</div><div class="agenda-status"><span class="badge ${statusClass(a.status)}">${esc(a.status)}</span><div class="status-menu">${appointmentStatusOptions(a)}</div></div></article>`;
+  return `<article class="agenda-appointment"><div class="agenda-time">${esc(a.time)}<small>${Number(a.duration||30)} min</small></div><div class="agenda-client"><div class="person-avatar">${initials(a.client)}</div><div><strong>${esc(a.client)}</strong><small>${esc(a.service)}</small></div></div><div class="agenda-professional"><span>Barbeiro</span><strong>${esc(a.barber||"-")}</strong></div><div class="agenda-price">${money(total)}</div><div class="agenda-status"><span class="badge ${statusClass(a.status)}">${esc(a.status)}</span><div class="status-menu">${appointmentStatusOptions(a)}<button type="button" class="btn btn-primary btn-small" onclick="openCheckout(${a.id})">Fechar e cobrar</button><button type="button" class="btn btn-danger btn-small" onclick="setStatus(${a.id},'No-Show')">Não compareceu</button></div></div></article>`;
 }
 async function renderVisualAgenda(){
   const date=$("#fullAgendaDate")?.value || $("#agendaDate")?.value;
@@ -558,8 +571,10 @@ function writeLocalArray(name,value){ localStorage.setItem(localKey(name),JSON.s
 function clientIdFromSession(){ return currentClient()?.clientId || null; }
 
 async function notify(type,title,message,meta={}){
+  const user=JSON.parse(sessionStorage.getItem("sgs_user")||"null");
+  if(!user?.id)throw new Error("Sessão do usuário não encontrada para registrar a notificação.");
   const rows=await Store.list("notifications");
-  await Store.create("notifications",{type,title,message,read:false,createdAt:new Date().toISOString(),meta});
+  await Store.create("notifications",{userId:user.id,type,title,message,read:false,createdAt:new Date().toISOString(),meta});
   return rows;
 }
 
@@ -616,13 +631,18 @@ async function reactivateClient(id){
   window.open(url,"_blank","noopener,noreferrer");
 }
 
-async function renderCheckout(){
+async function renderCheckout(selectedId = pendingCheckoutId){
   const apps=await Store.list("appointments");
   const selectable=apps.filter(a=>!['Cancelado','No-Show','Concluído'].includes(a.status));
   const select=$("#checkoutAppointment");
-  if(select) select.innerHTML=selectable.map(a=>`<option value="${a.id}">${esc(a.client)} — ${esc(a.service)} — ${fmtDate(a.date)} ${esc(a.time)}</option>`).join("")||'<option value="">Nenhum atendimento aberto</option>';
+  if(select) {
+    select.innerHTML=selectable.map(a=>`<option value="${a.id}">${esc(a.client)} — ${esc(a.service)} — ${fmtDate(a.date)} ${esc(a.time)}</option>`).join("")||'<option value="">Nenhum atendimento aberto</option>';
+    if(selectedId && selectable.some(a=>String(a.id)===String(selectedId)))select.value=String(selectedId);
+  }
+  pendingCheckoutId = null;
   await updateCheckoutPreview();
 }
+function openCheckout(id){pendingCheckoutId=String(id);switchSection("checkout");}
 async function updateCheckoutPreview(){
   const id=$("#checkoutAppointment")?.value; const box=$("#checkoutPreview"); if(!box)return;
   const a=id?await Store.get("appointments",id):null;
@@ -632,14 +652,24 @@ async function updateCheckoutPreview(){
 }
 async function closeAppointment(e){
   e.preventDefault();
-  const id=$("#checkoutAppointment")?.value; if(!id)return toast("Selecione um atendimento.");
-  const a=await Store.get("appointments",id); if(!a)return toast("Atendimento não encontrado.");
-  const discount=Math.max(0,Number($("#checkoutDiscount").value||0));
-  const payment=$("#checkoutPayment").value; const note=$("#checkoutNote").value.trim();
-  const total=Math.max(0,Number(a.price||0)+Number(a.extras||0)-discount);
-  await Store.update("appointments",id,{status:"Concluído",discount,paymentMethod:payment,finalTotal:total,checkoutNote:note,completedAt:new Date().toISOString()});
-  await notify("completed","Atendimento concluído",`${a.client} teve o atendimento finalizado por ${money(total)}.`);
-  toast("Atendimento fechado."); e.target.reset(); $("#checkoutDiscount").value=0; await renderCheckout(); await renderBarber(); await renderClients(); await renderReactivation(); await renderNotifications();
+  let appointment;
+  let total;
+  let id;
+  try{
+    id=$("#checkoutAppointment")?.value; if(!id)return toast("Selecione um atendimento.");
+    appointment=await Store.get("appointments",id); if(!appointment)return toast("Atendimento não encontrado.");
+    const discount=Math.max(0,Number($("#checkoutDiscount").value||0));
+    const payment=$("#checkoutPayment").value; if(!payment)return toast("Selecione a forma de pagamento.");
+    const note=$("#checkoutNote").value.trim();
+    total=Math.max(0,Number(appointment.price||0)+Number(appointment.extras||0)-discount);
+    await Store.update("appointments",id,{status:"Concluído",discount,paymentMethod:payment,finalTotal:total,checkoutNote:note,completedAt:new Date().toISOString()});
+  }catch(error){toast(error.message||"Não foi possível fechar o atendimento.");return;}
+  let notificationFailed=false;
+  try{await notify("completed","Atendimento concluído",`${appointment.client} teve o atendimento finalizado por ${money(total)}.`);}
+  catch(error){console.error("Não foi possível registrar a notificação do atendimento concluído.",error);notificationFailed=true;}
+  e.target.reset(); $("#checkoutDiscount").value=0;
+  await renderCheckout(); await renderBarber(); await renderFullAgenda(); await renderClients(); await renderReactivation(); await renderNotifications(); await renderReports();
+  toast(notificationFailed?"Atendimento fechado, mas não foi possível registrar a notificação.":"Atendimento fechado e pagamento registrado.");
 }
 
 async function renderSchedules(){
