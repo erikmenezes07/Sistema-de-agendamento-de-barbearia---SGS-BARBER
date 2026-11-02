@@ -48,8 +48,33 @@ public class AppointmentService {
 
     @Transactional
     public AppointmentModel update(@NonNull Long id, @NonNull AppointmentModel appointment) {
-        appointment.setId(id);
-        return saveValidated(appointment, id);
+        AppointmentModel current = appointments.findById(id).orElseThrow();
+        boolean scheduleChanged = changed(appointment.getBarberId(), current.getBarberId())
+                || changed(appointment.getServiceId(), current.getServiceId())
+                || changed(appointment.getDate(), current.getDate())
+                || changed(appointment.getStartTime(), current.getStartTime())
+                || changed(appointment.getDurationMinutes(), current.getDurationMinutes())
+                || changed(appointment.getBufferMinutes(), current.getBufferMinutes());
+
+        if (appointment.getClientId() != null) current.setClientId(appointment.getClientId());
+        if (appointment.getBarberId() != null) current.setBarberId(appointment.getBarberId());
+        if (appointment.getServiceId() != null) current.setServiceId(appointment.getServiceId());
+        if (appointment.getDate() != null) current.setDate(appointment.getDate());
+        if (appointment.getStartTime() != null) current.setStartTime(appointment.getStartTime());
+        if (appointment.getEndTime() != null) current.setEndTime(appointment.getEndTime());
+        if (appointment.getDurationMinutes() != null) current.setDurationMinutes(appointment.getDurationMinutes());
+        if (appointment.getBufferMinutes() != null) current.setBufferMinutes(appointment.getBufferMinutes());
+        if (appointment.getStatus() != null) current.setStatus(appointment.getStatus());
+        if (appointment.getPrice() != null) current.setPrice(appointment.getPrice());
+        if (appointment.getExtrasTotal() != null) current.setExtrasTotal(appointment.getExtrasTotal());
+        if (appointment.getDiscount() != null) current.setDiscount(appointment.getDiscount());
+        if (appointment.getFinalTotal() != null) current.setFinalTotal(appointment.getFinalTotal());
+        if (appointment.getPaymentMethod() != null) current.setPaymentMethod(appointment.getPaymentMethod());
+        if (appointment.getCheckoutNote() != null) current.setCheckoutNote(appointment.getCheckoutNote());
+        if (appointment.getCompletedAt() != null) current.setCompletedAt(appointment.getCompletedAt());
+        if (appointment.getClientPreferences() != null) current.setClientPreferences(appointment.getClientPreferences());
+
+        return scheduleChanged ? saveValidated(current, id) : appointments.save(current);
     }
 
     public void delete(@NonNull Long id) { appointments.deleteById(id); }
@@ -87,6 +112,10 @@ public class AppointmentService {
         if (conflict != null) throw bad(conflict);
         appointment.setDurationMinutes(duration);
         appointment.setEndTime(end);
+        appointment.setBufferMinutes(buffer);
+        if (appointment.getExtrasTotal() == null) appointment.setExtrasTotal(java.math.BigDecimal.ZERO);
+        if (appointment.getDiscount() == null) appointment.setDiscount(java.math.BigDecimal.ZERO);
+        if (appointment.getFinalTotal() == null) appointment.setFinalTotal(java.math.BigDecimal.ZERO);
         if (appointment.getStatus() == null) appointment.setStatus("scheduled");
         return appointments.save(appointment);
     }
@@ -117,6 +146,7 @@ public class AppointmentService {
 
     private ServiceModel service(@NonNull Long id) { return services.findById(id).orElseThrow(() -> bad("Serviço não encontrado")); }
     private boolean isCancelled(String status) { return status != null && (status.equalsIgnoreCase("cancelled") || status.equalsIgnoreCase("cancelado") || status.equalsIgnoreCase("no-show")); }
+    private boolean changed(Object value, Object current) { return value != null && !value.equals(current); }
     private boolean overlaps(LocalTime aStart, LocalTime aEnd, LocalTime bStart, LocalTime bEnd) { return bStart != null && bEnd != null && aStart.isBefore(bEnd) && aEnd.isAfter(bStart); }
     private ResponseStatusException bad(String message) { return new ResponseStatusException(HttpStatus.BAD_REQUEST, message); }
     private record Window(LocalTime open, LocalTime close, LocalTime breakStart, LocalTime breakEnd, int buffer) {
