@@ -9,8 +9,8 @@ import java.util.List;
 
 @RestController @RequestMapping("/api")
 public class ScheduleController {
- private final BlockRepository blocks; private final BarberScheduleRepository schedules;
- public ScheduleController(BlockRepository blocks,BarberScheduleRepository schedules){this.blocks=blocks;this.schedules=schedules;}
+ private final BlockRepository blocks; private final BarberScheduleRepository schedules; private final BarberTimeOffRepository timeOff;
+ public ScheduleController(BlockRepository blocks,BarberScheduleRepository schedules,BarberTimeOffRepository timeOff){this.blocks=blocks;this.schedules=schedules;this.timeOff=timeOff;}
  @GetMapping("/blocks") public List<BlockModel> blocks(){return blocks.findAll();}
  @GetMapping("/blocks/{id}") public BlockModel block(@PathVariable @NonNull Long id){return blocks.findById(id).orElseThrow();}
  @PostMapping("/blocks") public ResponseEntity<BlockModel> block(@RequestBody @NonNull BlockModel x){return ResponseEntity.status(HttpStatus.CREATED).body(blocks.save(x));}
@@ -21,4 +21,9 @@ public class ScheduleController {
  @PostMapping("/barberSchedules") public ResponseEntity<BarberScheduleModel> schedule(@RequestBody @NonNull BarberScheduleModel x){return ResponseEntity.status(HttpStatus.CREATED).body(schedules.save(x));}
  @PutMapping("/barberSchedules/{id}") public BarberScheduleModel schedule(@PathVariable @NonNull Long id,@RequestBody @NonNull BarberScheduleModel x){x.setId(id);return schedules.save(x);}
  @DeleteMapping("/barberSchedules/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) public void deleteSchedule(@PathVariable @NonNull Long id){schedules.deleteById(id);}
+ @GetMapping("/barberTimeOff") public List<BarberTimeOffModel> timeOff(){return timeOff.findAll();}
+ @GetMapping("/barberTimeOff/{id}") public BarberTimeOffModel timeOff(@PathVariable @NonNull Long id){return timeOff.findById(id).orElseThrow();}
+ @PostMapping("/barberTimeOff") public ResponseEntity<BarberTimeOffModel> timeOff(@RequestBody @NonNull BarberTimeOffModel x){return ResponseEntity.status(HttpStatus.CREATED).body(timeOff.save(x));}
+ @PutMapping("/barberTimeOff/{id}") public BarberTimeOffModel timeOff(@PathVariable @NonNull Long id,@RequestBody @NonNull BarberTimeOffModel x){x.setId(id);return timeOff.save(x);}
+ @DeleteMapping("/barberTimeOff/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) public void deleteTimeOff(@PathVariable @NonNull Long id){timeOff.deleteById(id);}
 }
