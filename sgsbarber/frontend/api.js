@@ -156,7 +156,6 @@ const Store = (() => {
       return { ok: true, user: { ...user, password: undefined } };
     },
     async dashboard() {
-      if (cfg.USE_API) return request("/api/dashboard/summary");
       const appointments = await this.list("appointments");
       const completed = appointments.filter(a => a.status === "Concluído");
       const gross = completed.reduce((s, a) => s + Number(a.price || 0) + Number(a.extras || 0), 0);
