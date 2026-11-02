@@ -24,15 +24,16 @@ public class AppointmentModel {
     @Column(name = "start_time") private LocalTime startTime;
     @Column(name = "end_time") private LocalTime endTime;
     @Column(name = "duration_minutes") private Integer durationMinutes;
-    @Column(name = "buffer_minutes") private Integer bufferMinutes = 0;
+    @Column(name = "buffer_minutes") private Integer bufferMinutes;
     private String status;
     private BigDecimal price;
     @JsonProperty("extras")
-    @Column(name = "extras_total") private BigDecimal extrasTotal = BigDecimal.ZERO;
-    private BigDecimal discount = BigDecimal.ZERO;
-    private BigDecimal finalTotal = BigDecimal.ZERO;
+    @Column(name = "extras_total") private BigDecimal extrasTotal;
+    private BigDecimal discount;
+    private BigDecimal finalTotal;
     private String paymentMethod;
     private String checkoutNote;
+    @Column(name = "completed_at") private OffsetDateTime completedAt;
     @JsonProperty("prefs")
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "client_preferences_json") private List<String> clientPreferences;
@@ -74,6 +75,8 @@ public class AppointmentModel {
     public void setPaymentMethod(String value) { paymentMethod = value; }
     public String getCheckoutNote() { return checkoutNote; }
     public void setCheckoutNote(String value) { checkoutNote = value; }
+    public OffsetDateTime getCompletedAt() { return completedAt; }
+    public void setCompletedAt(OffsetDateTime value) { completedAt = value; }
     public List<String> getClientPreferences() { return clientPreferences; }
     public void setClientPreferences(List<String> value) { clientPreferences = value; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
