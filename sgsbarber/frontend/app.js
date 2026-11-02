@@ -52,6 +52,9 @@ async function initLogin() {
     e.preventDefault();
     const data = { name: $("#registerClientName").value.trim(), phone: $("#registerClientPhone").value.trim(), email: $("#registerClientEmail").value.trim(), cpf: $("#registerClientCpf").value.replace(/\D/g,""), birthDate: $("#registerClientBirthDate").value, password: $("#registerClientPassword").value };
     const result = await Store.register("client", data);
+    let result;
+    try { result = await Store.register("client", data); }
+    catch (error) { return toast(error.message || "Não foi possível conectar ao servidor."); }
     if (!result.ok) return toast(result.message || "Não foi possível criar a conta.");
     sessionStorage.setItem("sgs_role", "client"); sessionStorage.setItem("sgs_user", JSON.stringify(result.user));
     location.href = "dashboard-cliente.html";
