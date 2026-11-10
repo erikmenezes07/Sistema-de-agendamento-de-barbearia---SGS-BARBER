@@ -1,0 +1,14 @@
+{
+  "name": "sgs-barber-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interface web SGS Barber",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check config.js && node --check api.js && node --check app.js && node --check server.js",
+    "test": "node --test ../tests/frontend-server.test.cjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

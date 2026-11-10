@@ -1,0 +1,8 @@
+package com.sgsbarber.model;
+import com.fasterxml.jackson.annotation.JsonIgnore; import jakarta.persistence.*; import java.time.OffsetDateTime;
+@Entity @Table(name="users") public class UserModel {
+ @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id; private String role; private String name; private String email; private String phone; private String cpf;
+ @JsonIgnore @Column(name="password_hash") private String passwordHash; @Column(name="client_id") private Long clientId; @Column(name="barber_id") private Long barberId; private Boolean active=true;
+ @Column(name="created_at",insertable=false,updatable=false) private OffsetDateTime createdAt; @Column(name="updated_at",insertable=false) private OffsetDateTime updatedAt;
+ public Long getId(){return id;} public void setId(Long v){id=v;} public String getRole(){return role;} public void setRole(String v){role=v;} public String getName(){return name;} public void setName(String v){name=v;} public String getEmail(){return email;} public void setEmail(String v){email=v;} public String getPhone(){return phone;} public void setPhone(String v){phone=v;} public String getCpf(){return cpf;} public void setCpf(String v){cpf=v;} public String getPasswordHash(){return passwordHash;} public void setPasswordHash(String v){passwordHash=v;} public Long getClientId(){return clientId;} public void setClientId(Long v){clientId=v;} public Long getBarberId(){return barberId;} public void setBarberId(Long v){barberId=v;} public Boolean getActive(){return active;} public void setActive(Boolean v){active=v;} public OffsetDateTime getCreatedAt(){return createdAt;} public OffsetDateTime getUpdatedAt(){return updatedAt;}
+}
