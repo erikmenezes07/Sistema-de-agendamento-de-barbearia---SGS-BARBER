@@ -1,0 +1,1 @@
+package com.sgsbarber.repository; import com.sgsbarber.model.*; import org.springframework.data.jpa.repository.JpaRepository; import java.util.List; public interface BarberServiceLinkRepository extends JpaRepository<BarberServiceLinkModel,BarberServiceLinkId>{List<BarberServiceLinkModel> findByBarberId(Long barberId);}
