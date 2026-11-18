@@ -1,1 +1,0 @@
-package com.sgsbarber.repository; import com.sgsbarber.model.WaitlistModel; import org.springframework.data.jpa.repository.JpaRepository; public interface WaitlistRepository extends JpaRepository<WaitlistModel,Long>{}

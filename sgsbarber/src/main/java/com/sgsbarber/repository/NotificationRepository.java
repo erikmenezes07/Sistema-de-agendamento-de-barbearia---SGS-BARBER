@@ -1,1 +1,0 @@
-package com.sgsbarber.repository; import com.sgsbarber.model.NotificationModel; import org.springframework.data.jpa.repository.JpaRepository; public interface NotificationRepository extends JpaRepository<NotificationModel,Long>{}
